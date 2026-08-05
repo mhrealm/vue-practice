@@ -65,8 +65,11 @@ const showPanel = { autoAlpha: 1, duration: 1 }
 const hidePanel = { autoAlpha: 0, duration: 0.5 }
 const holdPanel = { duration: 0.8 }
 
-const getPanelsByCardId = panels =>
-  panels.reduce((panelMap, panel) => {
+const isReady = () =>
+  stageRef.value && cardTrackRef.value && cardRef.value.length && panelRef.value.length
+
+const getPanelsByCardId = () =>
+  panelRef.value.reduce((panelMap, panel) => {
     const { cardId } = panel.dataset
     if (!cardId) return panelMap
 
@@ -84,7 +87,11 @@ const getCardNodes = card => {
 }
 
 // 计算移动的距离
-const getMoveX = (targetCard, stage, cardTrack) => () => {
+const getMoveX = targetCard => () => {
+  const stage = stageRef.value
+  const cardTrack = cardTrackRef.value
+  if (!stage || !cardTrack) return 0
+
   const stageRect = stage.getBoundingClientRect()
   const cardRect = targetCard.getBoundingClientRect()
   const trackX = Number(gsap.getProperty(cardTrack, 'x'))
@@ -109,20 +116,18 @@ const addPanelSequence = (timeline, panels) => {
 const addCardSequence = (
   timeline,
   currentCard,
-  cards,
-  panelsByCardId,
-  stage,
-  cardTrack
+  panelsByCardId
 ) => {
   const cardNodes = getCardNodes(currentCard)
   if (!cardNodes) return
 
   const { image, copy, cardId } = cardNodes
+  const cards = cardRef.value
   const otherCards = cards.filter(card => card !== currentCard)
   const currentPanels = panelsByCardId.get(cardId) ?? []
 
   timeline
-    .to(cards, { x: getMoveX(currentCard, stage, cardTrack), duration: 0.5 })
+    .to(cards, { x: getMoveX(currentCard), duration: 0.5 })
     .to(otherCards, hideCard, '>')
     .to(currentCard, focusCard, '<')
     .to(image, liftImage, '<')
@@ -140,14 +145,13 @@ const addCardSequence = (
 
 onMounted(async () => {
   await nextTick()
-  const [stage, cards, panels, cardTrack] = [stageRef.value, cardRef.value, panelRef.value, cardTrackRef.value]
-  if (!cards.length || !stage || !cardTrack || !panels.length) {
+  if (!isReady()) {
     return
   }
 
-  const panelsByCardId = getPanelsByCardId(panels)
+  const panelsByCardId = getPanelsByCardId()
 
-  gsap.set(panels, { autoAlpha: 0 })
+  gsap.set(panelRef.value, { autoAlpha: 0 })
 
   const timeline = gsap.timeline({
     defaults: { ease: 'power2.inOut' },
@@ -159,7 +163,7 @@ onMounted(async () => {
       invalidateOnRefresh: true,
     },
   })
-  cards.forEach(card => addCardSequence(timeline, card, cards, panelsByCardId, stage, cardTrack))
+  cardRef.value.forEach(card => addCardSequence(timeline, card, panelsByCardId))
 })
 
 </script>
