@@ -41,15 +41,47 @@
 </template>
 
 <script setup>
-import { onMounted, ref, nextTick } from 'vue';
+import { onMounted, ref, nextTick } from 'vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { storyGroups, storyScrollDistance } from './story-data'
+import { storyGroups } from './story-data'
+
 gsap.registerPlugin(ScrollTrigger)
+
 const cardRef = ref([])
 const panelRef = ref([])
 const cardTrackRef = ref()
 const stageRef = ref()
+
+const hideCard = { autoAlpha: 0, duration: 0.5 }
+const showCard = { autoAlpha: 1, duration: 0.5 }
+const focusCard = { autoAlpha: 1, scale: 2, duration: 0.5 }
+const resetCard = { autoAlpha: 1, scale: 1, duration: 0.5 }
+const liftImage = { y: -54, duration: 0.5 }
+const resetImage = { y: 0, duration: 0.5 }
+const dimCopy = { y: 58, opacity: 0.1, duration: 0.5 }
+const resetCopy = { y: 0, opacity: 1, duration: 0.5 }
+const showPanel = { autoAlpha: 1, duration: 1 }
+const hidePanel = { autoAlpha: 0, duration: 0.5 }
+const holdPanel = { duration: 0.8 }
+
+const getPanelsByCardId = panels =>
+  panels.reduce((panelMap, panel) => {
+    const { cardId } = panel.dataset
+    if (!cardId) return panelMap
+
+    const groupPanels = panelMap.get(cardId) ?? []
+    groupPanels.push(panel)
+    panelMap.set(cardId, groupPanels)
+    return panelMap
+  }, new Map())
+
+const getCardNodes = card => {
+  const image = card.querySelector('.story-img')
+  const copy = card.querySelector('.story-copy')
+  const { cardId } = card.dataset
+  return image && copy && cardId ? { image, copy, cardId } : null
+}
 
 // 计算移动的距离
 const getMoveX = (targetCard, stage, cardTrack) => () => {
@@ -59,49 +91,62 @@ const getMoveX = (targetCard, stage, cardTrack) => () => {
   return stageRect.left + stageRect.width / 2 - (cardRect.left - trackX + cardRect.width / 2)
 }
 
-const addCardSequence = (t1, currentCard, cards, panels, stage, cardTrack) => {
-  const otherCard = cards.filter(item => item !== currentCard)
-  const currentImg = currentCard.querySelector('.story-img')
-  const currentCopy = currentCard.querySelector('.story-copy')
-  const currentGroupId = currentCard.dataset.cardId
-  const currentPanels = panels.filter(panel => panel.dataset.cardId === currentGroupId)
+const addPanelSequence = (timeline, panels) => {
+  panels.forEach((panel, index) => {
+    const previousPanel = panels[index - 1]
+    if (previousPanel) timeline.to(previousPanel, hidePanel, '>')
 
-  t1.to(cards, { x: getMoveX(currentCard, stage, cardTrack), duration: 0.5 })
-    .to(otherCard, { autoAlpha: 0, duration: 0.5 }, '>')
-    .to(currentCard, { autoAlpha: 1, scale: 2, duration: 0.5 }, '<')
-    .to(currentImg, { y: -54, duration: 0.5, }, '<')
-    .to(currentCopy, { y: 58, opacity: 0.1, duration: 0.5, }, '<')
-    .to(currentCard, { autoAlpha: 0, duration: 0.5 }, '>')
-
-  currentPanels.forEach((panel, index) => {
-    const previousPanel = currentPanels[index - 1]
-    if (previousPanel) {
-      t1
-        .to(previousPanel, { autoAlpha: 0, duration: 0.5 }, '>')
-        .to(panel, { autoAlpha: 1, duration: 1 }, '<')
-    } else {
-      t1.to(panel, { autoAlpha: 1, duration: 1 }, '>')
-    }
-    t1.to({}, { duration: 0.8 })
+    timeline.to(panel, showPanel, previousPanel ? '<' : '>')
+      .to({}, holdPanel)
   })
 
-  const lastPanel = currentPanels[currentPanels.length - 1]
+  const lastPanel = panels.at(-1)
   if (lastPanel) {
-    t1.to(lastPanel, { autoAlpha: 0, duration: 0.5, }, '>')
+    timeline.to(lastPanel, hidePanel, '>')
   }
-  t1.to(currentCard, { autoAlpha: 1, scale: 1, duration: 0.5 }, '>')
-    .to(currentImg, { y: 0, duration: 0.5, }, '<')
-    .to(currentCopy, { y: 0, opacity: 1, duration: 0.5, }, '<')
-    .to(otherCard, { autoAlpha: 1, opacity: 1, duration: 0.5 }, '<')
+}
+
+const addCardSequence = (
+  timeline,
+  currentCard,
+  cards,
+  panelsByCardId,
+  stage,
+  cardTrack
+) => {
+  const cardNodes = getCardNodes(currentCard)
+  if (!cardNodes) return
+
+  const { image, copy, cardId } = cardNodes
+  const otherCards = cards.filter(card => card !== currentCard)
+  const currentPanels = panelsByCardId.get(cardId) ?? []
+
+  timeline
+    .to(cards, { x: getMoveX(currentCard, stage, cardTrack), duration: 0.5 })
+    .to(otherCards, hideCard, '>')
+    .to(currentCard, focusCard, '<')
+    .to(image, liftImage, '<')
+    .to(copy, dimCopy, '<')
+    .to(currentCard, hideCard, '>')
+
+  addPanelSequence(timeline, currentPanels)
+
+  timeline
+    .to(currentCard, resetCard, '>')
+    .to(image, resetImage, '<')
+    .to(copy, resetCopy, '<')
+    .to(otherCards, showCard, '<')
 }
 
 onMounted(async () => {
   await nextTick()
   const [stage, cards, panels, cardTrack] = [stageRef.value, cardRef.value, panelRef.value, cardTrackRef.value]
-  const currentCard = cards[0]
-  if (!cards.length || !currentCard || !stage || !cardTrack || !panels.length) {
+  if (!cards.length || !stage || !cardTrack || !panels.length) {
     return
   }
+
+  const panelsByCardId = getPanelsByCardId(panels)
+
   gsap.set(panels, { autoAlpha: 0 })
 
   const timeline = gsap.timeline({
@@ -114,7 +159,7 @@ onMounted(async () => {
       invalidateOnRefresh: true,
     },
   })
-  cards.forEach(card => { addCardSequence(timeline, card, cards, panels, stage, cardTrack) })
+  cards.forEach(card => addCardSequence(timeline, card, cards, panelsByCardId, stage, cardTrack))
 })
 
 </script>
