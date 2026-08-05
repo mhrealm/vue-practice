@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div ref="containerRef" class="container" :style="{ '--story-scroll-distance': storyScrollDistance }">
     <div class="story-stage" ref="stageRef">
       <!-- 卡片 -->
       <div class="story-card" ref="cardTrackRef">
@@ -41,20 +41,23 @@
 </template>
 
 <script setup>
-import { onMounted, ref, nextTick } from 'vue'
+import { onMounted, ref, nextTick, onBeforeUnmount } from 'vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { storyGroups } from './story-data'
+import { storyGroups, storyScrollDistance } from './story-data'
 
 gsap.registerPlugin(ScrollTrigger)
 
 const cardRef = ref([])
 const panelRef = ref([])
+const containerRef = ref()
 const cardTrackRef = ref()
 const stageRef = ref()
 
+let animationContext = null
+
 const isReady = () =>
-  stageRef.value && cardTrackRef.value && cardRef.value.length && panelRef.value.length
+  containerRef.value && stageRef.value && cardTrackRef.value && cardRef.value.length && panelRef.value.length
 
 const getCardByGroupId = groupId =>
   cardRef.value.find(card => card.dataset.cardId === groupId)
@@ -84,19 +87,21 @@ const getMoveX = targetCard => () => {
   return currentX + stageCenter - cardCenter
 }
 
-const addPanelSequence = (timeline, panels) => {
+const addPanelSequence = (timeline, panels, firstPanelPosition = '>') => {
+  if (!panels.length) return
+
   panels.forEach((panel, index) => {
     const previousPanel = panels[index - 1]
-    if (previousPanel) timeline.to(previousPanel, { autoAlpha: 0, duration: 0.5 }, '>')
+    if (previousPanel) timeline.to(previousPanel, { autoAlpha: 0, duration: 0.45 }, '>')
 
     timeline
-      .to(panel, { autoAlpha: 1, duration: 1 }, previousPanel ? '<' : '>')
-      .to({}, { duration: 0.8 })
+      .to(panel, { autoAlpha: 1, duration: 0.55 }, previousPanel ? '<' : firstPanelPosition)
+      .to({}, { duration: 0.75 })
   })
 
   const lastPanel = panels.at(-1)
   if (lastPanel) {
-    timeline.to(lastPanel, { autoAlpha: 0, duration: 0.5 }, '>')
+    timeline.to(lastPanel, { autoAlpha: 0, duration: 0.45 }, '>')
   }
 }
 
@@ -115,21 +120,22 @@ const addCardSequence = (timeline, group) => {
   timeline
     .set(cards, { zIndex: 1 })
     .set(card, { zIndex: 3 })
-    .to(cardTrack, { x: getMoveX(card), duration: 0.5 })
-    .to(otherCards, { opacity: 0, scale: 0.94, filter: 'saturate(0.55)', duration: 0.35 }, '>')
-    .to(card, { autoAlpha: 1, scale: 4, duration: 0.5 }, '<')
-    .to(image, { y: -54, scale: 1.06, duration: 0.5 }, '<')
-    .to(copy, { y: 58, opacity: 0.1, duration: 0.5 }, '<')
-    .to(card, { autoAlpha: 0, duration: 0.5 }, '>')
+    .set(cardTrack, { autoAlpha: 1 })
+    .to(cardTrack, { x: getMoveX(card), duration: 0.85 })
+    .to(otherCards, { opacity: 0, scale: 0.94, filter: 'saturate(0.55)', duration: 0.38 }, '<+=0.12')
+    .to(card, { autoAlpha: 0, scale: 4, duration: 0.72 }, '<+=0.18')
+    .to(image, { y: -54, scale: 1.06, duration: 0.72 }, '<')
+    .to(copy, { y: 58, opacity: 0, duration: 0.58 }, '<')
+    .to(cardTrack, { autoAlpha: 0, duration: 0.28 }, '<+=0.35')
 
-  addPanelSequence(timeline, currentPanels)
+  addPanelSequence(timeline, currentPanels, '<+=0.18')
 
   timeline
-    .set(card, { autoAlpha: 1 })
-    .to(card, { autoAlpha: 1, scale: 1, duration: 0.5 }, '>')
-    .to(image, { y: 0, duration: 0.7 }, '<')
-    .to(copy, { y: 0, opacity: 1, duration: 0.7 }, '<')
-    .to(otherCards, { autoAlpha: 1, scale: 1, duration: 0.7 }, '<+=0.2')
+    .set(card, { autoAlpha: 1, scale: 1 })
+    .set(image, { y: 0, scale: 1 })
+    .set(copy, { y: 0, opacity: 1 })
+    .to(cardTrack, { autoAlpha: 1, x: 0, duration: 0.75 }, '>')
+    .to(otherCards, { autoAlpha: 1, opacity: 1, scale: 1, filter: 'saturate(1)', duration: 0.7 }, '<+=0.12')
     .set(card, { zIndex: 1 })
 }
 
@@ -139,19 +145,29 @@ onMounted(async () => {
     return
   }
 
-  gsap.set(panelRef.value, { autoAlpha: 0 })
+  animationContext = gsap.context(() => {
+    gsap.set(cardTrackRef.value, { autoAlpha: 1, x: 0 })
+    gsap.set(cardRef.value, { autoAlpha: 1, scale: 1, transformOrigin: 'center center' })
+    gsap.set(panelRef.value, { autoAlpha: 0 })
 
-  const timeline = gsap.timeline({
-    defaults: { ease: 'power2.inOut' },
-    scrollTrigger: {
-      trigger: '.container',
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: 1,
-      invalidateOnRefresh: true,
-    },
-  })
-  storyGroups.forEach(group => addCardSequence(timeline, group))
+    const timeline = gsap.timeline({
+      defaults: { ease: 'power2.inOut' },
+      scrollTrigger: {
+        trigger: containerRef.value,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 1,
+        invalidateOnRefresh: true,
+      },
+    })
+    storyGroups.forEach(group => addCardSequence(timeline, group))
+  }, containerRef.value)
+
+  requestAnimationFrame(() => ScrollTrigger.refresh())
+})
+
+onBeforeUnmount(() => {
+  animationContext?.revert()
 })
 
 </script>
@@ -159,7 +175,8 @@ onMounted(async () => {
 <style lang="less" scoped>
 .container {
   position: relative;
-  height: 500vh;
+  height: calc(100vh + var(--story-scroll-distance, 1440vh));
+  min-height: calc(640px + var(--story-scroll-distance, 1440vh));
   background-color: #191b1f;
 
   video,
@@ -187,11 +204,14 @@ onMounted(async () => {
   }
 
   .story-card {
+    position: relative;
+    z-index: 4;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: center;
     gap: 18px;
     width: min(1120px, calc(100% - 56px));
+    will-change: transform, opacity;
   }
 
   .story-item {
@@ -213,6 +233,7 @@ onMounted(async () => {
       width: 100%;
       height: 64%;
       margin: 0;
+      will-change: transform;
     }
 
     .story-copy {
@@ -220,6 +241,7 @@ onMounted(async () => {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      will-change: transform, opacity;
 
       h2 {
         margin: 0;
@@ -251,6 +273,8 @@ onMounted(async () => {
     gap: 40px;
     align-items: center;
     padding: 60px max(36px, calc((100vw - 1180px) / 2));
+    opacity: 0;
+    visibility: hidden;
   }
 
   .story-section .panel-visual {
