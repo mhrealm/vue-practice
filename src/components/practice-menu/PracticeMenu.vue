@@ -31,17 +31,17 @@ defineProps({
 
 <style lang="less" scoped>
 .practice-menu {
-  margin: 20px auto;
-  padding: 0 15px;
+  margin: 28px auto;
+  padding: 0 24px;
 }
 
 .practice-menu__group+.practice-menu__group {
-  margin-top: 28px;
+  margin-top: 36px;
 }
 
 .practice-menu__group-title {
-  margin: 0 0 12px;
-  font-size: 18px;
+  margin: 0 0 16px;
+  font-size: 20px;
   font-weight: 600;
   color: #333;
 }
@@ -51,9 +51,9 @@ defineProps({
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   grid-auto-flow: row;
-  gap: 8px;
+  gap: 14px;
 }
 
 .practice-menu__item {
@@ -88,16 +88,16 @@ defineProps({
   display: flex;
   flex-direction: column;
   align-items: start;
-  gap: 6px;
+  gap: 8px;
   height: 100%;
-  padding: 8px 10px;
+  padding: 14px 16px;
   text-decoration: none;
   color: inherit;
 }
 
 .practice-menu__badge {
-  font-size: 9px;
-  padding: 1px 6px;
+  font-size: 11px;
+  padding: 2px 8px;
   border-radius: 4px;
   font-weight: bold;
   text-transform: uppercase;
@@ -109,8 +109,8 @@ defineProps({
   width: 100%;
   min-width: 0;
   font-weight: 500;
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: 15px;
+  line-height: 1.45;
   transition: color 0.3s ease;
   display: block;
   white-space: nowrap;
@@ -119,13 +119,19 @@ defineProps({
 }
 
 .practice-menu__tag {
-  font-size: 10px;
+  font-size: 12px;
   color: #999;
 }
 
 @media (max-width: 640px) {
+  .practice-menu {
+    margin: 22px auto;
+    padding: 0 16px;
+  }
+
   .practice-menu__list {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
   }
 }
 </style>
