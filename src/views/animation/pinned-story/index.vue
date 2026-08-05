@@ -68,22 +68,19 @@ const holdPanel = { duration: 0.8 }
 const isReady = () =>
   stageRef.value && cardTrackRef.value && cardRef.value.length && panelRef.value.length
 
-const getPanelsByCardId = () =>
-  panelRef.value.reduce((panelMap, panel) => {
-    const { cardId } = panel.dataset
-    if (!cardId) return panelMap
+const getCardByGroupId = groupId =>
+  cardRef.value.find(card => card.dataset.cardId === groupId)
 
-    const groupPanels = panelMap.get(cardId) ?? []
-    groupPanels.push(panel)
-    panelMap.set(cardId, groupPanels)
-    return panelMap
-  }, new Map())
+const getPanelsByGroupId = groupId =>
+  panelRef.value.filter(panel => panel.dataset.cardId === groupId)
 
-const getCardNodes = card => {
+const getCardNodes = groupId => {
+  const card = getCardByGroupId(groupId)
+  if (!card) return null
+
   const image = card.querySelector('.story-img')
   const copy = card.querySelector('.story-copy')
-  const { cardId } = card.dataset
-  return image && copy && cardId ? { image, copy, cardId } : null
+  return image && copy ? { card, image, copy } : null
 }
 
 // 计算移动的距离
@@ -113,31 +110,27 @@ const addPanelSequence = (timeline, panels) => {
   }
 }
 
-const addCardSequence = (
-  timeline,
-  currentCard,
-  panelsByCardId
-) => {
-  const cardNodes = getCardNodes(currentCard)
+const addCardSequence = (timeline, group) => {
+  const cardNodes = getCardNodes(group.id)
   if (!cardNodes) return
 
-  const { image, copy, cardId } = cardNodes
+  const { card, image, copy } = cardNodes
   const cards = cardRef.value
-  const otherCards = cards.filter(card => card !== currentCard)
-  const currentPanels = panelsByCardId.get(cardId) ?? []
+  const otherCards = cards.filter(item => item !== card)
+  const currentPanels = getPanelsByGroupId(group.id)
 
   timeline
-    .to(cards, { x: getMoveX(currentCard), duration: 0.5 })
+    .to(cards, { x: getMoveX(card), duration: 0.5 })
     .to(otherCards, hideCard, '>')
-    .to(currentCard, focusCard, '<')
+    .to(card, focusCard, '<')
     .to(image, liftImage, '<')
     .to(copy, dimCopy, '<')
-    .to(currentCard, hideCard, '>')
+    .to(card, hideCard, '>')
 
   addPanelSequence(timeline, currentPanels)
 
   timeline
-    .to(currentCard, resetCard, '>')
+    .to(card, resetCard, '>')
     .to(image, resetImage, '<')
     .to(copy, resetCopy, '<')
     .to(otherCards, showCard, '<')
@@ -148,8 +141,6 @@ onMounted(async () => {
   if (!isReady()) {
     return
   }
-
-  const panelsByCardId = getPanelsByCardId()
 
   gsap.set(panelRef.value, { autoAlpha: 0 })
 
@@ -163,7 +154,7 @@ onMounted(async () => {
       invalidateOnRefresh: true,
     },
   })
-  cardRef.value.forEach(card => addCardSequence(timeline, card, panelsByCardId))
+  storyGroups.forEach(group => addCardSequence(timeline, group))
 })
 
 </script>
