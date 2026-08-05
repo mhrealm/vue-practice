@@ -40,29 +40,29 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { onMounted, ref, nextTick } from 'vue';
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { storyGroups, storyScrollDistance } from './story-data'
 gsap.registerPlugin(ScrollTrigger)
-const cardRef = ref<HTMLElement[]>([])
-const panelRef = ref<HTMLElement[]>([])
-const cardTrackRef = ref<HTMLElement>()
-const stageRef = ref<HTMLElement>()
+const cardRef = ref([])
+const panelRef = ref([])
+const cardTrackRef = ref()
+const stageRef = ref()
 
 // 计算移动的距离
-const getMoveX = (targetCard: HTMLElement, stage: HTMLElement, cardTrack: HTMLElement) => () => {
+const getMoveX = (targetCard, stage, cardTrack) => () => {
   const stageRect = stage.getBoundingClientRect()
   const cardRect = targetCard.getBoundingClientRect()
   const trackX = Number(gsap.getProperty(cardTrack, 'x'))
   return stageRect.left + stageRect.width / 2 - (cardRect.left - trackX + cardRect.width / 2)
 }
 
-const addCardSequence = (t1: gsap.core.Timeline, currentCard: HTMLElement, cards, panels, stage, cardTrack) => {
+const addCardSequence = (t1, currentCard, cards, panels, stage, cardTrack) => {
   const otherCard = cards.filter(item => item !== currentCard)
-  const currentImg = currentCard.querySelector<HTMLElement>('.story-img')
-  const currentCopy = currentCard.querySelector<HTMLElement>('.story-copy')
+  const currentImg = currentCard.querySelector('.story-img')
+  const currentCopy = currentCard.querySelector('.story-copy')
   const currentGroupId = currentCard.dataset.cardId
   const currentPanels = panels.filter(panel => panel.dataset.cardId === currentGroupId)
 
@@ -104,15 +104,17 @@ onMounted(async () => {
   }
   gsap.set(panels, { autoAlpha: 0 })
 
-  const t1 = gsap.timeline({ defaults: { ease: 'power3.inOut' }, })
-  cards.forEach(card => { addCardSequence(t1, card, cards, panels, stage, cardTrack) })
-  ScrollTrigger.create({
-    animation: t1,
-    trigger: '.container',
-    start: 'top top',
-    end: 'bottom bottom',
-    scrub: true,
+  const timeline = gsap.timeline({
+    defaults: { ease: 'power2.inOut' },
+    scrollTrigger: {
+      trigger: '.container',
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: 1,
+      invalidateOnRefresh: true,
+    },
   })
+  cards.forEach(card => { addCardSequence(timeline, card, cards, panels, stage, cardTrack) })
 })
 
 </script>
@@ -284,3 +286,11 @@ onMounted(async () => {
   }
 }
 </style>
+
+<route lang="json">{
+  "meta": {
+    "title": "Pinned 滚动叙事楼层",
+    "category": "animation",
+    "tag": "GSAP"
+  }
+}</route>
