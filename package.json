@@ -1,0 +1,31 @@
+{
+  "name": "vue-vite-practice",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "globe.gl": "^2.45.3",
+    "gsap": "^3.15.0",
+    "jquery": "^3.7.1",
+    "three": "^0.184.0",
+    "vue": "^3.5.22",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
+    "less": "^4.4.2",
+    "less-loader": "^12.3.0",
+    "prettier": "^3.9.6",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.7",
+    "vite-plugin-pages": "^0.33.3",
+    "vue-tsc": "^3.1.0"
+  }
+}
