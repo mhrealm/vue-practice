@@ -8,6 +8,11 @@
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
   "dependencies": {
     "globe.gl": "^2.45.3",
     "gsap": "^3.15.0",
