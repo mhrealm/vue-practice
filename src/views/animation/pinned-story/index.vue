@@ -53,18 +53,6 @@ const panelRef = ref([])
 const cardTrackRef = ref()
 const stageRef = ref()
 
-const hideCard = { autoAlpha: 0, duration: 0.5 }
-const showCard = { autoAlpha: 1, duration: 0.5 }
-const focusCard = { autoAlpha: 1, scale: 2, duration: 0.5 }
-const resetCard = { autoAlpha: 1, scale: 1, duration: 0.5 }
-const liftImage = { y: -54, duration: 0.5 }
-const resetImage = { y: 0, duration: 0.5 }
-const dimCopy = { y: 58, opacity: 0.1, duration: 0.5 }
-const resetCopy = { y: 0, opacity: 1, duration: 0.5 }
-const showPanel = { autoAlpha: 1, duration: 1 }
-const hidePanel = { autoAlpha: 0, duration: 0.5 }
-const holdPanel = { duration: 0.8 }
-
 const isReady = () =>
   stageRef.value && cardTrackRef.value && cardRef.value.length && panelRef.value.length
 
@@ -88,25 +76,27 @@ const getMoveX = targetCard => () => {
   const stage = stageRef.value
   const cardTrack = cardTrackRef.value
   if (!stage || !cardTrack) return 0
-
   const stageRect = stage.getBoundingClientRect()
   const cardRect = targetCard.getBoundingClientRect()
-  const trackX = Number(gsap.getProperty(cardTrack, 'x'))
-  return stageRect.left + stageRect.width / 2 - (cardRect.left - trackX + cardRect.width / 2)
+  const currentX = Number(gsap.getProperty(cardTrack, 'x'))
+  const stageCenter = stageRect.left + stageRect.width / 2
+  const cardCenter = cardRect.left + cardRect.width / 2
+  return currentX + stageCenter - cardCenter
 }
 
 const addPanelSequence = (timeline, panels) => {
   panels.forEach((panel, index) => {
     const previousPanel = panels[index - 1]
-    if (previousPanel) timeline.to(previousPanel, hidePanel, '>')
+    if (previousPanel) timeline.to(previousPanel, { autoAlpha: 0, duration: 0.5 }, '>')
 
-    timeline.to(panel, showPanel, previousPanel ? '<' : '>')
-      .to({}, holdPanel)
+    timeline
+      .to(panel, { autoAlpha: 1, duration: 1 }, previousPanel ? '<' : '>')
+      .to({}, { duration: 0.8 })
   })
 
   const lastPanel = panels.at(-1)
   if (lastPanel) {
-    timeline.to(lastPanel, hidePanel, '>')
+    timeline.to(lastPanel, { autoAlpha: 0, duration: 0.5 }, '>')
   }
 }
 
@@ -116,24 +106,31 @@ const addCardSequence = (timeline, group) => {
 
   const { card, image, copy } = cardNodes
   const cards = cardRef.value
+  const cardTrack = cardTrackRef.value
+  if (!cardTrack) return
+
   const otherCards = cards.filter(item => item !== card)
   const currentPanels = getPanelsByGroupId(group.id)
 
   timeline
-    .to(cards, { x: getMoveX(card), duration: 0.5 })
-    .to(otherCards, hideCard, '>')
-    .to(card, focusCard, '<')
-    .to(image, liftImage, '<')
-    .to(copy, dimCopy, '<')
-    .to(card, hideCard, '>')
+    .set(cards, { zIndex: 1 })
+    .set(card, { zIndex: 3 })
+    .to(cardTrack, { x: getMoveX(card), duration: 0.5 })
+    .to(otherCards, { opacity: 0, scale: 0.94, filter: 'saturate(0.55)', duration: 0.35 }, '>')
+    .to(card, { autoAlpha: 1, scale: 4, duration: 0.5 }, '<')
+    .to(image, { y: -54, scale: 1.06, duration: 0.5 }, '<')
+    .to(copy, { y: 58, opacity: 0.1, duration: 0.5 }, '<')
+    .to(card, { autoAlpha: 0, duration: 0.5 }, '>')
 
   addPanelSequence(timeline, currentPanels)
 
   timeline
-    .to(card, resetCard, '>')
-    .to(image, resetImage, '<')
-    .to(copy, resetCopy, '<')
-    .to(otherCards, showCard, '<')
+    .set(card, { autoAlpha: 1 })
+    .to(card, { autoAlpha: 1, scale: 1, duration: 0.5 }, '>')
+    .to(image, { y: 0, duration: 0.7 }, '<')
+    .to(copy, { y: 0, opacity: 1, duration: 0.7 }, '<')
+    .to(otherCards, { autoAlpha: 1, scale: 1, duration: 0.7 }, '<+=0.2')
+    .set(card, { zIndex: 1 })
 }
 
 onMounted(async () => {
@@ -198,6 +195,7 @@ onMounted(async () => {
   }
 
   .story-item {
+    position: relative;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
