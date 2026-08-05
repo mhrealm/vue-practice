@@ -1,229 +1,296 @@
-# 把三张卡片锁进一屏：用 GSAP 做 pinned 滚动叙事楼层
+# 用 GSAP 实现 pinned 滚动叙事楼层
 
 ![alt text](image-1.png)
 
-有些官网的产品页很会讲故事。
+这次做的是一个常见的官网叙事动画：页面滚到某一段时，画面固定在一屏里，用户继续滚动，真正变化的不是普通文档流，而是一条由 GSAP 控制的时间线。
 
-页面滚到某一段时，画面突然停住了。你继续滚，页面没有向下走，而是像一条时间线一样开始播放：卡片移动到中心、放大、图片和文字拉开距离，然后主角退场，背后的内容一层一层覆盖进来。等这一段讲完，卡片又回到原位，下一个卡片接着进入中心。
+当前效果大致是：
 
-这类效果看起来像“页面在滚”，但它真正滚动的不是普通文档流，而是一个被 `pin` 住的固定舞台。鼠标滚轮只是用来推进 GSAP 时间轴的播放进度。
+1. 三张概览卡片横向排列。
+2. 滚动时整条卡片轨道移动，让当前卡片进入屏幕中心。
+3. 当前卡片放大，同时透明度降低到 0，把视觉焦点交给详情内容。
+4. 当前分组下的多个 section 依次淡入、停留、淡出。
+5. section 播放完成后，当前卡片先从放大状态缩回原始尺寸。
+6. 最后轨道移动回初始位置，进入下一张卡片的流程。
 
-这次实现的 `Pinned 滚动叙事楼层` 就是这个思路：三张概览卡片横向排列，用户继续滚动时，每张卡片依次成为主角，并在同一屏里切换它对应的多个内容楼层。
+这里没有使用 ScrollTrigger 的 `pin`，而是让 CSS 的 `position: sticky` 负责固定舞台，ScrollTrigger 只负责把滚动进度映射到 GSAP timeline。
 
-## 先把结构想清楚
+## 页面结构
 
-这个效果最容易写偏的地方，是把后续内容继续做成一个个普通楼层，然后用滚动跳到下一屏。这样虽然也能看到内容变化，但它已经不是 pinned narrative 了。
-
-我这次把页面拆成三层：
+当前模板可以分成三层：
 
 ```text
-story-stage
-  story-card-track    三张概览卡片
-  story-panel-stack   所有内容楼层的叠放容器
-    story-panel       内容楼层，absolute inset: 0
+container
+  story-stage       sticky 固定舞台
+    story-card      三张概览卡片组成的横向轨道
+    story-panel     所有详情 section 的叠放容器
+      story-section 每一个详情楼层
 ```
 
-`story-scroll` 是负责撑开滚动距离的外层容器，`story-stage` 才是真正显示画面的粘性舞台。它使用 `position: sticky; top: 0;` 固定在视口内。卡片轨道和内容楼层都放在这个舞台内部，所以后续内容不会把页面撑高，也不会变成普通向下滚动的楼层。
+核心结构如下：
 
-内容楼层统一使用 `.story-panel`：
+```vue
+<div ref="containerRef" class="container" :style="{ '--story-scroll-distance': storyScrollDistance }">
+  <div class="story-stage" ref="stageRef">
+    <div class="story-card" ref="cardTrackRef">
+      <article
+        ref="cardRef"
+        class="story-item"
+        v-for="group in storyGroups"
+        :key="group.id"
+        :data-card-id="group.id"
+      >
+        ...
+      </article>
+    </div>
 
-```css
-.story-panel {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  visibility: hidden;
+    <div class="story-panel">
+      <section
+        ref="panelRef"
+        v-for="panel in group.panels"
+        class="story-section"
+        :data-card-id="group.id"
+      >
+        ...
+      </section>
+    </div>
+  </div>
+</div>
+```
+
+`.container` 负责撑开滚动距离，`.story-stage` 固定在视口里，`.story-card` 和 `.story-panel` 都放在这一个固定舞台内。
+
+## 滚动距离
+
+滚动距离来自 `story-data.ts`：
+
+```ts
+export const getStoryScrollDistanceVh = (groups: StoryGroup[] = storyGroups) => {
+  const panelCount = groups.reduce((total, group) => total + group.panels.length, 0)
+  return Math.max((panelCount + groups.length * 1.8) * 100, 720)
+}
+
+export const storyScrollDistance = `${getStoryScrollDistanceVh()}vh`
+```
+
+页面里把它挂到 CSS 变量：
+
+```vue
+:style="{ '--story-scroll-distance': storyScrollDistance }"
+```
+
+再用于容器高度：
+
+```less
+.container {
+  height: calc(100vh + var(--story-scroll-distance, 1440vh));
+  min-height: calc(640px + var(--story-scroll-distance, 1440vh));
 }
 ```
 
-动画里使用 GSAP 的 `autoAlpha` 控制它们，`autoAlpha: 0` 等价于透明并隐藏，`autoAlpha: 1` 才显示。这比只改 `opacity` 更稳，因为透明但仍然可见、可被读屏或拦截交互的元素，在复杂叠层里很容易制造奇怪问题。
+这么做的原因是 timeline 里有卡片入场、放大、section 切换、停留、复位等多个片段。如果滚动距离太短，动画会被压得很快，看起来就不丝滑。
 
-## 配置数组是整个效果的骨架
+## 轨道整体移动
 
-这类动画不能把 DOM 和时间轴写死，否则第四张卡片、第五组内容一来，代码就会散。
+这个版本的要求是移动整条卡片轨道，而不是只移动当前卡片，所以动画目标是 `cardTrack`：
 
-所以页面里的卡片和内容都来自同一个 `storyGroups` 配置：
-
-```ts
-const storyGroups = [
-  {
-    id: 'signal',
-    title: '城市信号',
-    cardImage: '...',
-    panels: [
-      { id: 'map', title: '街区热度被压缩到一屏', image: '...' },
-      { id: 'motion', title: '视频楼层进入时重新播放', video: '...' },
-      { id: 'brief', title: '最后收束成行动摘要', image: '...' },
-    ],
-  },
-]
+```js
+.to(cardTrack, { x: getMoveX(card), duration: 0.85 })
 ```
 
-模板只负责循环渲染：外层循环生成概览卡片，内层循环生成每个组对应的 `.story-panel`。动画初始化时再通过 `data-story-card` 和 `data-story-panel` 找到对应节点。
+`getMoveX` 用来计算轨道需要移动多少，才能让目标卡片居中：
 
-这样做有一个好处：动画流程只写一遍。每组内容有几张 panel、是否有视频、主题色是什么，都交给配置决定。后续扩展时，大部分时候只需要加数据。
+```js
+const getMoveX = targetCard => () => {
+  const stage = stageRef.value
+  const cardTrack = cardTrackRef.value
+  if (!stage || !cardTrack) return 0
 
-## timeline 才是主线，不是点击事件
+  const stageRect = stage.getBoundingClientRect()
+  const cardRect = targetCard.getBoundingClientRect()
+  const currentX = Number(gsap.getProperty(cardTrack, 'x'))
+  const stageCenter = stageRect.left + stageRect.width / 2
+  const cardCenter = cardRect.left + cardRect.width / 2
 
-这个需求有一个很明确的限制：不要点击跳转，所有过程都由滚动推进。
+  return currentX + stageCenter - cardCenter
+}
+```
 
-所以核心不是写事件监听，而是搭建一条 scrub 时间轴。固定效果交给 CSS sticky，ScrollTrigger 只负责读取外层滚动容器的滚动进度：
+这里把 `currentX` 算进去，是因为轨道可能已经处在某个 transform 状态里。滚动动画支持正向和反向，如果不考虑当前位移，后续卡片居中位置容易偏。
 
-```ts
+## 卡片放大和淡出
+
+当前卡片进入中心后，会放大到 `scale: 4`，同时透明度变成 0：
+
+```js
+.to(card, { opacity: 0, scale: 4, duration: 0.72 }, '<+=0.18')
+.to(image, { y: -54, scale: 1.06, duration: 0.72 }, '<')
+.to(copy, { y: 58, opacity: 0, duration: 0.58 }, '<')
+.to(cardTrack, { autoAlpha: 0, duration: 0.28 }, '<+=0.35')
+```
+
+这里单个卡片使用 `opacity`，没有用 `autoAlpha`。原因是 `autoAlpha` 会同时修改 `visibility`，当用户从结尾反向滚回开头时，后面几张卡片可能残留 `visibility: hidden`，导致只剩第一张卡片可见。
+
+`autoAlpha` 更适合用在整条轨道或 section 这种确实需要隐藏的层上。
+
+## section 串行动画
+
+每个卡片分组下面有多个详情 section，它们通过 `addPanelSequence` 依次进入：
+
+```js
+const addPanelSequence = (timeline, panels, firstPanelPosition = '>') => {
+  if (!panels.length) return
+
+  panels.forEach((panel, index) => {
+    const previousPanel = panels[index - 1]
+    if (previousPanel) timeline.to(previousPanel, { autoAlpha: 0, duration: 0.45 }, '>')
+
+    timeline
+      .to(panel, { autoAlpha: 1, duration: 0.55 }, previousPanel ? '<' : firstPanelPosition)
+      .to({}, { duration: 0.75 })
+  })
+
+  const lastPanel = panels.at(-1)
+  if (lastPanel) {
+    timeline.to(lastPanel, { autoAlpha: 0, duration: 0.45 }, '>')
+  }
+}
+```
+
+这里的空 tween：
+
+```js
+.to({}, { duration: 0.75 })
+```
+
+不改变任何 DOM，只是在时间线上占一段长度。因为 timeline 被 `scrub` 绑定到滚动，所以它对应的就是“继续滚动一段，但画面保持当前 section”的阅读停留时间。
+
+## 卡片恢复顺序
+
+section 播完之后，不能直接把卡片 `set` 回原始状态，否则会少掉恢复动画。当前代码的顺序是：
+
+```js
+.to(cardTrack, { autoAlpha: 1, duration: 0.28 }, '>')
+.to(card, { opacity: 1, scale: 1, duration: 0.75 }, '<')
+.to(image, { y: 0, scale: 1, duration: 0.75 }, '<')
+.to(copy, { y: 0, opacity: 1, duration: 0.65 }, '<')
+.to(cardTrack, { x: 0, duration: 0.75 }, '>')
+.to(otherCards, { opacity: 1, scale: 1, filter: 'saturate(1)', duration: 0.7 }, '<+=0.12')
+```
+
+也就是先让当前卡片重新出现并缩回正常大小，再移动整条轨道回到初始位置。这个顺序比“先移动轨道，再恢复卡片”更自然，因为用户能看到当前卡片从详情状态收回到概览状态。
+
+## 视频播放
+
+如果某个 section 里有视频，需要和滚动状态同步。当前代码做了三件事：
+
+1. 找到所有视频和它所在的 `.story-section`。
+2. timeline 更新时，判断哪个 section 的透明度超过阈值。
+3. 只播放当前可见 section 里的视频，其他视频全部暂停。
+
+核心逻辑：
+
+```js
+const syncVideos = () => {
+  const visibleVideo =
+    videoPanels.find(({ panel }) => Number(gsap.getProperty(panel, 'opacity')) > 0.65)
+      ?.video ?? null
+
+  videos.forEach(video => {
+    if (video !== visibleVideo) {
+      video.pause()
+    }
+  })
+
+  if (!visibleVideo || activeVideo === visibleVideo) {
+    if (!visibleVideo) activeVideo = null
+    return
+  }
+
+  activeVideo = visibleVideo
+  playFromStart(visibleVideo)
+}
+```
+
+`activeVideo` 的作用是记录当前视频，避免滚动过程中 `onUpdate` 高频触发时，同一个视频不断从头播放。
+
+进入新视频时会从头播放：
+
+```js
+const playFromStart = video => {
+  try {
+    video.currentTime = 0
+    video.play().catch(() => undefined)
+  } catch {
+    video.play().catch(() => undefined)
+  }
+}
+```
+
+`video.play()` 可能会被浏览器策略拒绝，所以这里用了 `catch` 兜底，不让视频播放失败影响主动画。
+
+## ScrollTrigger 初始化
+
+当前时间线写法如下：
+
+```js
 const timeline = gsap.timeline({
+  defaults: { ease: 'power2.inOut' },
+  onUpdate: syncVideos,
   scrollTrigger: {
-    trigger: scrollContainer,
+    trigger: containerRef.value,
     start: 'top top',
     end: 'bottom bottom',
     scrub: 1,
     invalidateOnRefresh: true,
+    onLeave: pauseAllVideos,
+    onLeaveBack: pauseAllVideos,
   },
 })
 ```
 
-这里不再使用 `pin`。`start: 'top top'` 表示外层滚动容器顶部到达视口顶部时开始推进时间轴，`end: 'bottom bottom'` 表示外层滚动容器底部到达视口底部时结束。中间这段真实滚动距离由 `.story-scroll` 的高度提供，而 `.story-stage` 会在这段期间用 sticky 停在屏幕里。
+几个关键点：
 
-每一张卡片的流程都被拆成同样的几个片段：
+- `scrub: 1`：滚动进度和动画进度绑定，并带一点缓冲。
+- `invalidateOnRefresh: true`：窗口尺寸变化或刷新时重新计算函数型数值，比如 `getMoveX(card)`。
+- `onUpdate: syncVideos`：每次时间线更新时同步视频播放状态。
+- `onLeave` / `onLeaveBack`：离开动画区域时暂停所有视频。
 
-1. 其他卡片变暗，当前卡片移动到屏幕中心。
-2. 当前卡片放大，图片上移，文字下移，制造“卡片被拆开”的感觉。
-3. 卡片和卡片轨道淡出，把舞台交给内容楼层。
-4. 当前组的 `.story-panel` 依次交叉淡入淡出。
-5. 最后一张内容楼层隐藏，卡片重新出现并恢复原位。
-6. 进入下一张卡片，重复同一套流程。
+这里仍然没有使用 `pin`，固定效果由 CSS sticky 完成。
 
-这里有一个小技巧：内容完全显示后，需要给用户一点继续阅读的滚动距离。代码里用了空 tween 作为停顿段：
+## 清理逻辑
 
-```ts
-timeline.to(panel, { autoAlpha: 1, duration: 0.48 }, '>')
-timeline.to({}, { duration: 0.72 })
-```
+Vue 页面切换时需要清理 GSAP 动画，否则重复进入页面可能会出现多个 ScrollTrigger 同时存在的问题。
 
-这个空 tween 不改变任何 DOM，只是占用时间轴长度。因为时间轴被 scroll scrub 控制，所以它对应的就是“继续滚一段，但画面保持当前内容”的阅读空间。
+当前使用 `gsap.context`：
 
-## 卡片移动到中心的难点
-
-卡片初始是三列网格排布，第一张在左边，第二张在中间，第三张在右边。要让任意一张卡片移动到屏幕中心，不能直接写死 `x: 300` 或 `x: -300`，因为视口宽度、卡片宽度和响应式布局都会变。
-
-实现里用函数动态计算偏移：
-
-```ts
-const getCenterX = (card: HTMLElement) => () => {
-  const stageRect = stage.getBoundingClientRect()
-  const cardRect = card.getBoundingClientRect()
-  const currentX = Number(gsap.getProperty(card, 'x'))
-  const cardCenter = cardRect.left - currentX + cardRect.width / 2
-
-  return stageRect.left + stageRect.width / 2 - cardCenter
-}
-```
-
-注意这里减掉了 `currentX`。因为 GSAP 动画过程中，元素可能已经有 transform，如果直接用 `getBoundingClientRect()` 的结果，很容易把当前 transform 也算进去，导致回滚或刷新后位置偏移。
-
-再配合 `invalidateOnRefresh: true`，窗口尺寸变化时 ScrollTrigger 会重新计算函数值，移动距离不会被旧视口缓存住。
-
-## 内容楼层为什么要叠起来
-
-需求里强调“不要让后续内容作为普通楼层向下滚动”。这句话其实决定了布局方案。
-
-如果每个内容都是一个普通 `section`，页面高度会被它们撑开。此时用户继续滚动，看到的是文档在往下走，而不是 pinned 区域内的场景切换。
-
-所以所有内容都必须叠在同一个屏幕上：
-
-```html
-<div class="story-panel-stack">
-  <section class="story-panel"></section>
-  <section class="story-panel"></section>
-  <section class="story-panel"></section>
-</div>
-```
-
-每一层都是 `absolute inset: 0`。它们占据同一个舞台，只通过 `autoAlpha` 决定谁出现。当前内容完全显示后，继续滚动时下一层淡入，上一层淡出，整个过程仍然发生在同一屏。
-
-这种结构还有一个额外好处：视觉上更像剪辑，而不是网页排版。你可以把它理解成一块固定屏幕，滚轮控制的是这块屏幕里的镜头切换。
-
-## 视频楼层的处理
-
-视频是这个效果里比较容易忽略的细节。
-
-如果只是把视频放进某个 panel，当 panel 淡出以后，视频可能还在后台继续播放。用户回滚时，也可能看到视频从中间某个时间点继续播，而不是从头开始。这和“楼层进入显示时从头播放，离开或隐藏时暂停”的要求不一致。
-
-这次的做法是：在时间轴 `onUpdate` 里检查当前可见的 panel。如果某个 panel 的透明度超过阈值，并且它里面有 video，就把它当成当前视频。
-
-```ts
-const visibleVideo =
-  panels
-    .map(panel => ({
-      panel,
-      opacity: Number(gsap.getProperty(panel, 'opacity')),
-      video: panel.querySelector('video'),
-    }))
-    .filter(item => item.video && item.opacity > 0.65)
-    .sort((a, b) => b.opacity - a.opacity)[0]?.video ?? null
-```
-
-当 `visibleVideo` 发生变化时，先暂停旧视频，再把新视频 `currentTime` 设为 `0` 并播放。离开 pinned 区域、回到 pinned 区域之前、组件卸载时，也会统一暂停所有视频。
-
-这里视频加了 `muted` 和 `playsinline`，这是为了让浏览器更容易允许自动播放。即便如此，`video.play()` 仍然可能因为浏览器策略返回 rejected promise，所以代码里对播放失败做了兜底，不让它影响主动画。
-
-## 滚动距离不是越长越好
-
-粘性定位版本里，滚动距离由外层 `.story-scroll` 的高度决定，`ScrollTrigger` 的 `end: 'bottom bottom'` 只负责读取这段距离的终点。
-
-如果距离太短，用户轻轻一滚，卡片和内容就飞快切完，看不清每一段。距离太长，又会让人觉得页面卡住了很久。
-
-这里根据内容数量估算滚动距离，并把结果写成 CSS 变量：
-
-```ts
-const getStoryScrollDistanceVh = () => {
-  const panelCount = storyGroups.reduce((total, group) => total + group.panels.length, 0)
-  return Math.max((panelCount + storyGroups.length * 1.8) * 100, 720)
-}
-```
-
-它不是一个绝对公式，只是给时间轴留出足够空间：panel 越多，滚动距离越长；同时设置一个最小值，避免内容少时动画太赶。页面里会把这个值作为 `--story-scroll-distance`，然后用 `height: calc(100vh + var(--story-scroll-distance))` 撑开外层容器。
-
-做这种滚动叙事时，调 `duration` 和调 `end` 是一组工作。`duration` 决定各段在时间轴中的比例，`end` 决定用户需要滚多少真实距离才能走完这条时间轴。
-
-## 清理比动画本身更重要
-
-Vue 页面被切走时，如果不清理 ScrollTrigger，后面很容易出现残留 pin、重复触发、滚动距离异常这些问题。
-
-实现里用了 `gsap.context` 包住所有动画：
-
-```ts
+```js
 animationContext = gsap.context(() => {
   // timeline and ScrollTrigger
-}, page)
+}, containerRef.value)
 ```
 
-组件卸载时调用：
+卸载时：
 
-```ts
+```js
 onBeforeUnmount(() => {
   pauseAllVideos()
   animationContext?.revert()
 })
 ```
 
-`revert()` 会把这个 context 里创建的动画和 ScrollTrigger 一起还原。对 Vue 单页应用来说，这一步非常关键。否则你第一次进入页面是正常的，切出去再回来，就可能发现滚动进度或元素 transform 变得不对。
+`pauseAllVideos()` 负责暂停可能还在播放的视频，`revert()` 负责还原这个 context 中创建的动画和 ScrollTrigger。
 
-## 这类效果的注意事项
+## 小结
 
-第一，尽量不要混用 CSS `position: sticky` 和 ScrollTrigger `pin` 做同一个舞台。一个主控就够了，这里由 sticky 负责固定，ScrollTrigger 只负责动画进度，布局负责提供滚动距离和叠层结构。
+这版实现的重点不是某一个单独的 GSAP API，而是几件事配合起来：
 
-第二，叠层内容要用 `visibility` 一起控制。只改 `opacity` 的隐藏元素依然在那儿，复杂页面里可能会遮挡鼠标、影响焦点，甚至让视频继续处于活跃状态。
+1. 用 CSS sticky 固定舞台。
+2. 用容器高度提供真实滚动距离。
+3. 用一个 scrub timeline 编排所有状态。
+4. 用整条轨道的 `x` 位移完成卡片居中。
+5. 用 `opacity + scale` 做卡片放大淡出，避免单卡片 `autoAlpha` 留下 visibility 状态。
+6. 用 `autoAlpha` 控制 section 的叠层显示。
+7. 用 timeline 的 `onUpdate` 根据当前可见 section 同步视频播放。
 
-第三，所有用于计算位置的值都要考虑响应式。卡片居中这件事看起来简单，但只要有网格、缩放、窗口变化，就不要写死位移。
-
-第四，视频不要只在动画某个时间点 `play()` 一次。scrub 动画可以前进也可以后退，用户可能停在任意进度，所以更可靠的方式是根据“当前哪个 panel 可见”同步视频状态。
-
-第五，时间轴越长，越要保持 DOM 层级清楚。卡片层、内容层、背景层分开，会比在同一个元素上不断切换 z-index 更容易维护。
-
-## 写在最后
-
-这个效果的关键不是某一个 GSAP API，而是先承认它本质上不是普通页面滚动。
-
-普通页面滚动关心的是“下一个楼层在哪里”；pinned 滚动叙事关心的是“同一个舞台的下一个状态是什么”。一旦这个思路转过来，结构就会清楚很多：主容器 pin 住，内容绝对叠放，timeline 负责调度，滚轮只负责推进时间。
-
-后续如果要扩展，可以继续往 `storyGroups` 里加第四张卡片，也可以让某个组拥有更多 panel。只要每组仍然遵守“卡片入场 -> 内容切换 -> 卡片复位”的节奏，整套滚动叙事就能保持稳定。
+只要保持“轨道移动 -> 卡片放大淡出 -> section 串联 -> 卡片恢复 -> 轨道归位”这个节奏，后面继续增加卡片或增加 section，整体结构也不会乱。
