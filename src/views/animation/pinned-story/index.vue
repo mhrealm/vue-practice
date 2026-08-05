@@ -123,7 +123,7 @@ const addCardSequence = (timeline, group) => {
     .set(cardTrack, { autoAlpha: 1 })
     .to(cardTrack, { x: getMoveX(card), duration: 0.85 })
     .to(otherCards, { opacity: 0, scale: 0.94, filter: 'saturate(0.55)', duration: 0.38 }, '<+=0.12')
-    .to(card, { autoAlpha: 0, scale: 4, duration: 0.72 }, '<+=0.18')
+    .to(card, { opacity: 0, scale: 4, duration: 0.72 }, '<+=0.18')
     .to(image, { y: -54, scale: 1.06, duration: 0.72 }, '<')
     .to(copy, { y: 58, opacity: 0, duration: 0.58 }, '<')
     .to(cardTrack, { autoAlpha: 0, duration: 0.28 }, '<+=0.35')
@@ -131,11 +131,12 @@ const addCardSequence = (timeline, group) => {
   addPanelSequence(timeline, currentPanels, '<+=0.18')
 
   timeline
-    .set(card, { autoAlpha: 1, scale: 1 })
-    .set(image, { y: 0, scale: 1 })
-    .set(copy, { y: 0, opacity: 1 })
-    .to(cardTrack, { autoAlpha: 1, x: 0, duration: 0.75 }, '>')
-    .to(otherCards, { autoAlpha: 1, opacity: 1, scale: 1, filter: 'saturate(1)', duration: 0.7 }, '<+=0.12')
+    .to(cardTrack, { autoAlpha: 1, duration: 0.28 }, '>')
+    .to(card, { opacity: 1, scale: 1, duration: 0.75 }, '<')
+    .to(image, { y: 0, scale: 1, duration: 0.75 }, '<')
+    .to(copy, { y: 0, opacity: 1, duration: 0.65 }, '<')
+    .to(cardTrack, { x: 0, duration: 0.75 }, '>')
+    .to(otherCards, { opacity: 1, scale: 1, filter: 'saturate(1)', duration: 0.7 }, '<+=0.12')
     .set(card, { zIndex: 1 })
 }
 
@@ -147,7 +148,7 @@ onMounted(async () => {
 
   animationContext = gsap.context(() => {
     gsap.set(cardTrackRef.value, { autoAlpha: 1, x: 0 })
-    gsap.set(cardRef.value, { autoAlpha: 1, scale: 1, transformOrigin: 'center center' })
+    gsap.set(cardRef.value, { opacity: 1, scale: 1, transformOrigin: 'center center' })
     gsap.set(panelRef.value, { autoAlpha: 0 })
 
     const timeline = gsap.timeline({
