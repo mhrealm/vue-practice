@@ -1,7 +1,7 @@
 <template>
   <div ref="containerRef" class="container" :style="{ '--story-scroll-distance': storyScrollDistance }">
     <div class="story-stage" ref="stageRef">
-      <!-- 卡片 -->
+      <!-- 概览卡片轨道 -->
       <div class="story-card" ref="cardTrackRef">
         <article ref="cardRef" class="story-item" v-for="group in storyGroups" :key="group.id" :data-card-id="group.id">
           <figure class="story-img">
@@ -14,7 +14,7 @@
           </div>
         </article>
       </div>
-      <!-- 故事面板 -->
+      <!-- 详情内容面板 -->
       <div class="story-panel">
         <template v-for="group in storyGroups" :key="`${group.id}-panels`">
           <section ref="panelRef" v-for="panel in group.panels" :key="`${group.id}-${panel.id}`" class="story-section" :style="{ '--panel-accent': group.accent }" :data-card-id="group.id">
@@ -54,7 +54,10 @@ const containerRef = ref()
 const cardTrackRef = ref()
 const stageRef = ref()
 
+// 保存 GSAP context，组件卸载时统一清理动画和 ScrollTrigger。
 let animationContext = null
+// 记录当前正在播放的视频，避免滚动更新时反复从头播放。
+let activeVideo = null
 
 const isReady = () =>
   containerRef.value && stageRef.value && cardTrackRef.value && cardRef.value.length && panelRef.value.length
@@ -74,7 +77,7 @@ const getCardNodes = groupId => {
   return image && copy ? { card, image, copy } : null
 }
 
-// 计算移动的距离
+// 计算整条轨道需要移动的距离，让目标卡片对齐舞台中心。
 const getMoveX = targetCard => () => {
   const stage = stageRef.value
   const cardTrack = cardTrackRef.value
@@ -87,6 +90,24 @@ const getMoveX = targetCard => () => {
   return currentX + stageCenter - cardCenter
 }
 
+const playFromStart = video => {
+  try {
+    video.currentTime = 0
+    video.play().catch(() => undefined)
+  } catch {
+    video.play().catch(() => undefined)
+  }
+}
+
+// 离开滚动区域或组件卸载时暂停所有视频，避免后台继续播放。
+const pauseAllVideos = () => {
+  activeVideo = null
+  containerRef.value?.querySelectorAll('video').forEach(video => {
+    video.pause()
+  })
+}
+
+// 把同一组里的多个 section 串成连续的淡入、停留、淡出片段。
 const addPanelSequence = (timeline, panels, firstPanelPosition = '>') => {
   if (!panels.length) return
 
@@ -117,6 +138,7 @@ const addCardSequence = (timeline, group) => {
   const otherCards = cards.filter(item => item !== card)
   const currentPanels = getPanelsByGroupId(group.id)
 
+  // 第一段：轨道整体移动到目标卡片居中，然后卡片放大淡出，交给详情面板。
   timeline
     .set(cards, { zIndex: 1 })
     .set(card, { zIndex: 3 })
@@ -130,6 +152,7 @@ const addCardSequence = (timeline, group) => {
 
   addPanelSequence(timeline, currentPanels, '<+=0.18')
 
+  // 第二段：详情面板结束后，先恢复当前卡片尺寸，再把整条轨道移回初始位置。
   timeline
     .to(cardTrack, { autoAlpha: 1, duration: 0.28 }, '>')
     .to(card, { opacity: 1, scale: 1, duration: 0.75 }, '<')
@@ -147,27 +170,59 @@ onMounted(async () => {
   }
 
   animationContext = gsap.context(() => {
+    const videos = Array.from(containerRef.value.querySelectorAll('video'))
+    const videoPanels = videos
+      .map(video => ({ video, panel: video.closest('.story-section') }))
+      .filter(item => item.panel)
+
+    // 根据当前可见的 section 同步视频，只播放正在展示的那一个。
+    const syncVideos = () => {
+      const visibleVideo =
+        videoPanels.find(({ panel }) => Number(gsap.getProperty(panel, 'opacity')) > 0.65)
+          ?.video ?? null
+
+      videos.forEach(video => {
+        if (video !== visibleVideo) {
+          video.pause()
+        }
+      })
+
+      if (!visibleVideo || activeVideo === visibleVideo) {
+        if (!visibleVideo) activeVideo = null
+        return
+      }
+
+      activeVideo = visibleVideo
+      playFromStart(visibleVideo)
+    }
+
     gsap.set(cardTrackRef.value, { autoAlpha: 1, x: 0 })
     gsap.set(cardRef.value, { opacity: 1, scale: 1, transformOrigin: 'center center' })
     gsap.set(panelRef.value, { autoAlpha: 0 })
 
+    // 用一个 scrub 时间线承载全部片段，让滚动进度驱动叙事节奏。
     const timeline = gsap.timeline({
       defaults: { ease: 'power2.inOut' },
+      onUpdate: syncVideos,
       scrollTrigger: {
         trigger: containerRef.value,
         start: 'top top',
         end: 'bottom bottom',
         scrub: 1,
         invalidateOnRefresh: true,
+        onLeave: pauseAllVideos,
+        onLeaveBack: pauseAllVideos,
       },
     })
     storyGroups.forEach(group => addCardSequence(timeline, group))
+    timeline.call(pauseAllVideos)
   }, containerRef.value)
 
   requestAnimationFrame(() => ScrollTrigger.refresh())
 })
 
 onBeforeUnmount(() => {
+  pauseAllVideos()
   animationContext?.revert()
 })
 
