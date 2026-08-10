@@ -1,4 +1,3 @@
-
 # 我决定写一个 3D 地球仪来记录下我去过的地方
 
 ## 前言
@@ -26,7 +25,7 @@
 
 简单来说，它是一个基于 Three.js 封装的开源 JavaScript 组件，专门用来进行 **地球空间数据的可视化**。它的强大之处在于：你不需要写复杂的 WebGL 底层代码，就可以做出一个 3D 交互式地球。
 
-为什么选择它呢？ 
+为什么选择它呢？
 
 因为它足够简单，下面是实用资源。
 
@@ -37,7 +36,6 @@
 ## 快速开始
 
 先看效果图
-
 
 代码预览
 
@@ -115,7 +113,7 @@ onMounted(() => {
   controls.autoRotate = true; // 开启自动旋转
   controls.autoRotateSpeed = -1; // 设置旋转速度和方向 负值代表是逆时针
 
-  // 自动高亮循环 
+  // 自动高亮循环
   const interval = setInterval(() => {
     window.requestIdleCallback(() => {
       highlightIndex.value = (highlightIndex.value + 1) % initData.length;
@@ -203,7 +201,7 @@ onMounted(() => {
 
 1. Globe.gl: 基于 Three.js 的封装，将复杂的 WebGL 地球渲染简化为数据驱动的API组合。
 2. GSAP & ScrollTrigger：写动效的神器，这里主要负责处理文案随页面滚动的平滑视觉过渡。
-   
+
 **核心代码分析：**
 
 1. 这里选择 Globe.gl 的原因是其拥有强大的**数据映射能力**, 可以轻松的将地理坐标 (GPS) 轻松转换为 3D 空间坐标
@@ -226,7 +224,7 @@ onMounted(() => {
 ```
 
 3. 这里引入 gsap 动画滚动控制文字浮现，增加整体趣味。
-  
+
 ```js
   gsap.fromTo(textRef.value,
     { y: 100, opacity: 0, zIndex: -1 },
@@ -242,13 +240,14 @@ onMounted(() => {
     }
   );
 ```
+
 4. 销毁定时器（interval）、解绑全局事件（resize）、销毁地球实例（world），以上这些做法都是防止内存泄露。
 
 ```js
   onBeforeUnmount(() => {
     if (interval) clearInterval(interval);
     window.removeEventListener("resize", handleResize);
-    if (world) world._destructor?.(); 
+    if (world) world._destructor?.();
   });
 ```
 
@@ -257,19 +256,3 @@ onMounted(() => {
 以上就是使用 globe.gl 创建 3D 交互式动画的全部内容了，其实相对比较简单，大多数都是 API 的配置，后期如果有时间，研究一下出个2.0版本，可以在坐标的位置添加对应的图片，点击图片放大。或者增加国家地区的选择，可以让用户自定义选择国家地区，增加功能交互。
 
 最后不得不说，骗你 “一键三连” 真难，还得编故事，哈哈哈...
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
