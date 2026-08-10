@@ -101,7 +101,10 @@ vue-vite-practice/
 │  │  │  ├─ async-delay/
 │  │  │  └─ map-usage/
 │  │  ├─ performance/           # 性能优化示例
-│  │  │  └─ lazy-image/
+│  │  │  ├─ lazy-image/
+│  │  │  ├─ preload-image/
+│  │  │  ├─ skeleton-screen/
+│  │  │  └─ virtual-list/
 │  │  └─ vue/                   # Vue 基础能力练习
 │  │     ├─ component-refresh/
 │  │     ├─ global-methods/
@@ -164,7 +167,7 @@ const router = createRouter({
 | CSS 布局与效果 | 混合模式、文本省略                                                                                                              |
 | Canvas 实验    | Canvas 基础图形、Canvas 序列帧滚动、Canvas 轨道动画、Canvas 电子签名、Canvas 变形                                               |
 | JavaScript 实战 | 异步调用与延迟执行、Map 管理列表选择                                                                                           |
-| 性能优化       | 图片懒加载                                                                                                                      |
+| 性能优化       | 图片懒加载、图片预加载、骨架屏、虚拟列表                                                                                        |
 | Vue 基础       | 全局方法、强制刷新组件、键盘事件                                                                                                |
 
 ## 掘金文章源码索引
@@ -218,6 +221,9 @@ const router = createRouter({
 **performance**
 
 - [图片懒加载](https://github.com/mhrealm/vue-practice/blob/master/src/views/performance/lazy-image/index.vue)
+- [图片预加载](https://github.com/mhrealm/vue-practice/blob/master/src/views/performance/preload-image/index.vue)
+- [骨架屏](https://github.com/mhrealm/vue-practice/blob/master/src/views/performance/skeleton-screen/index.vue)
+- [虚拟列表](https://github.com/mhrealm/vue-practice/blob/master/src/views/performance/virtual-list/index.vue)
 
 **vue**
 
