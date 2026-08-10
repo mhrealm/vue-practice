@@ -38,7 +38,7 @@ import OrderMerge from './OrderMerge.vue'
 <route lang="json">{
   "meta": {
     "title": "Map 管理列表选择",
-    "category": "JavaScript",
+    "category": "JavaScript 实战",
     "tag": "Map"
   }
 }</route>

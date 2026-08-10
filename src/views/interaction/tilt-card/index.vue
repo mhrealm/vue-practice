@@ -99,7 +99,7 @@ html {
 <route lang="json">{
   "meta": {
     "title": "鼠标跟随倾斜",
-    "category": "animation",
-    "tag": "动效"
+    "category": "交互组件",
+    "tag": "鼠标交互"
   }
 }</route>

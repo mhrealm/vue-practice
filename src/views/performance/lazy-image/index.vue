@@ -11,7 +11,7 @@ import Basic from './basic.vue'
 <route lang="json">{
   "meta": {
     "title": "图片懒加载",
-    "category": "function",
-    "tag": "lazy-image"
+    "category": "性能优化",
+    "tag": "Lazy Load"
   }
 }</route>

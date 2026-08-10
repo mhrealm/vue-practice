@@ -87,7 +87,7 @@ onBeforeUnmount(() => {
 <route lang="json">{
   "meta": {
     "title": "GSAP ScrollTrigger 基础",
-    "category": "animation",
+    "category": "动画动效",
     "tag": "GSAP"
   }
 }</route>

@@ -94,7 +94,7 @@ onMounted(drawTransformDemo)
 <route lang="json">{
   "meta": {
     "title": "Canvas 变形",
-    "category": "Canvas",
+    "category": "Canvas 实验",
     "tag": "Canvas"
   }
 }</route>

@@ -60,7 +60,7 @@ const list = [
 <route lang="json">{
   "meta": {
     "title": "相册动画",
-    "category": "animation",
-    "tag": "photo-album"
+    "category": "动画动效",
+    "tag": "3D"
   }
 }</route>

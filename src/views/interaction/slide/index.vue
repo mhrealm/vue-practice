@@ -176,7 +176,7 @@ const resetSwipeState = () => {
 <route lang="json">{
   "meta": {
     "title": "滑动交互",
-    "category": "animation",
-    "tag": "slide"
+    "category": "交互组件",
+    "tag": "滑动"
   }
 }</route>

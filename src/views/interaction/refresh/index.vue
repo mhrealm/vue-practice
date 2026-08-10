@@ -101,8 +101,8 @@ onMounted(loadPage)
 
 <route lang="json">{
   "meta": {
-    "title": "下拉刷新",
-    "category": "animation",
-    "tag": "refresh"
+    "title": "滚动加载",
+    "category": "交互组件",
+    "tag": "列表加载"
   }
 }</route>

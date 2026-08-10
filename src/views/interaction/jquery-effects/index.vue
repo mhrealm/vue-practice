@@ -215,7 +215,7 @@ onBeforeUnmount(() => {
 <route lang="json">{
   "meta": {
     "title": "jQuery 交互动效",
-    "category": "jQuery",
+    "category": "交互组件",
     "tag": "jQuery"
   }
 }</route>

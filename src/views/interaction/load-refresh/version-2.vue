@@ -141,7 +141,7 @@ onBeforeUnmount(() => {
 <route lang="json">{
   "meta": {
     "title": "上拉加载",
-    "category": "function",
-    "tag": "load-refresh"
+    "category": "交互组件",
+    "tag": "列表加载"
   }
 }</route>

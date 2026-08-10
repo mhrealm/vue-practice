@@ -27,7 +27,7 @@ const handleShowToastClick = () => {
 <route lang="json">{
   "meta": {
     "title": "如何定义全局的方法？",
-    "category": "Vue",
+    "category": "Vue 基础",
     "tag": "基础交互"
   }
 }</route>

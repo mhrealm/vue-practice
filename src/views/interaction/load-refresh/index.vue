@@ -15,11 +15,11 @@
 const list = [
   {
     title: '版本1: 上拉加载下拉刷新',
-    path: '/vue/load-refresh/version-1',
+    path: '/interaction/load-refresh/version-1',
   },
   {
     title: '版本2: 上拉加载',
-    path: '/vue/load-refresh/version-2',
+    path: '/interaction/load-refresh/version-2',
   },
 ]
 </script>
@@ -70,7 +70,7 @@ const list = [
 <route lang="json">{
   "meta": {
     "title": "加载与刷新",
-    "category": "function",
-    "tag": "load-refresh"
+    "category": "交互组件",
+    "tag": "列表加载"
   }
 }</route>

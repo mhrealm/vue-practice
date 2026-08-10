@@ -214,7 +214,7 @@ html {
 <route lang="json">{
   "meta": {
     "title": "楼层转场动画",
-    "category": "animation",
+    "category": "动画动效",
     "tag": "GSAP"
   }
 }</route>

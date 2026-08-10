@@ -1,6 +1,6 @@
 # Vue Vite Practice
 
-一个基于 **Vue 3 + Vite + TypeScript** 的前端练习项目，用来沉淀 Vue 基础能力、JavaScript 实战、Canvas 示例、jQuery 交互、GSAP 动画和经典官网效果复刻。
+一个基于 **Vue 3 + Vite + TypeScript** 的前端练习项目，用来沉淀 Vue 基础能力、JavaScript 实战、Canvas 示例、CSS 效果、交互组件、GSAP 动画、性能优化和经典官网效果复刻。
 
 项目首页会读取 `src/views` 下自动生成的路由，并根据页面中的 `meta` 配置生成练习入口。
 
@@ -71,17 +71,12 @@ vue-vite-practice/
 │  ├─ views/                    # 页面练习集合，自动生成路由
 │  │  ├─ index.vue              # 首页菜单
 │  │  ├─ [...all].vue           # 404 页面
-│  │  ├─ animation/             # 动画与交互练习
+│  │  ├─ animation/             # 动画动效与滚动时间线
 │  │  │  ├─ background-shake/
-│  │  │  ├─ blend-mode/
+│  │  │  ├─ flip-clock/
 │  │  │  ├─ floor-change/
 │  │  │  ├─ gsap-basics/
-│  │  │  ├─ hover-navbar/
-│  │  │  ├─ photo-album/
-│  │  │  ├─ refresh/
-│  │  │  ├─ slide/
-│  │  │  ├─ text-ellipsis/
-│  │  │  └─ tilt-card/
+│  │  │  └─ photo-album/
 │  │  ├─ canvas/                # Canvas 练习
 │  │  │  ├─ basic-shapes/
 │  │  │  ├─ canvas-sequence/
@@ -92,18 +87,25 @@ vue-vite-practice/
 │  │  │  ├─ earth-section/
 │  │  │  ├─ pinned-story/
 │  │  │  └─ qa-session/
+│  │  ├─ css-effects/           # CSS 布局与视觉效果
+│  │  │  ├─ blend-mode/
+│  │  │  └─ text-ellipsis/
+│  │  ├─ interaction/           # 交互组件与页面行为
+│  │  │  ├─ hover-navbar/
+│  │  │  ├─ jquery-effects/
+│  │  │  ├─ load-refresh/
+│  │  │  ├─ refresh/
+│  │  │  ├─ slide/
+│  │  │  └─ tilt-card/
 │  │  ├─ javascript/            # JavaScript 实战
 │  │  │  ├─ async-delay/
 │  │  │  └─ map-usage/
-│  │  ├─ jquery/                # jQuery 示例
-│  │  │  └─ jquery-effects/
-│  │  └─ vue/                   # Vue 基础与业务组件练习
+│  │  ├─ performance/           # 性能优化示例
+│  │  │  └─ lazy-image/
+│  │  └─ vue/                   # Vue 基础能力练习
 │  │     ├─ component-refresh/
-│  │     ├─ flip-clock/
 │  │     ├─ global-methods/
-│  │     ├─ keyboard-events/
-│  │     ├─ lazy-image/
-│  │     └─ load-refresh/
+│  │     └─ keyboard-events/
 │  ├─ App.vue
 │  ├─ env.d.ts
 │  └─ main.ts
@@ -143,7 +145,7 @@ const router = createRouter({
 {
   "meta": {
     "title": "示例练习",
-    "category": "Vue",
+    "category": "Vue 基础",
     "tag": "基础"
   }
 }
@@ -157,11 +159,13 @@ const router = createRouter({
 | 分类           | 页面                                                                                                                            |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | 经典复刻       | 3D 地球仪、Pinned 滚动叙事楼层、网易音乐七夕活动复刻                                                                            |
-| Animation      | 背景抖动、混合模式、楼层转场动画、GSAP ScrollTrigger 基础、Hover 高亮导航、相册动画、下拉刷新、滑动交互、文本省略、鼠标跟随倾斜 |
-| Canvas         | Canvas 基础图形、Canvas 序列帧滚动、Canvas 轨道动画、Canvas 电子签名、Canvas 变形                                               |
-| JavaScript     | 异步调用与延迟执行、Map 管理列表选择                                                                                            |
-| jQuery         | jQuery 交互动效                                                                                                                 |
-| Vue / Function | 全局方法、强制刷新组件、键盘事件、图片懒加载、加载与刷新、翻页时钟                                                              |
+| 动画动效       | 背景抖动、楼层转场动画、GSAP ScrollTrigger 基础、相册动画、翻页时钟                                                             |
+| 交互组件       | Hover 高亮导航、jQuery 交互动效、加载与刷新、滚动加载、滑动交互、鼠标跟随倾斜                                                   |
+| CSS 布局与效果 | 混合模式、文本省略                                                                                                              |
+| Canvas 实验    | Canvas 基础图形、Canvas 序列帧滚动、Canvas 轨道动画、Canvas 电子签名、Canvas 变形                                               |
+| JavaScript 实战 | 异步调用与延迟执行、Map 管理列表选择                                                                                           |
+| 性能优化       | 图片懒加载                                                                                                                      |
+| Vue 基础       | 全局方法、强制刷新组件、键盘事件                                                                                                |
 
 ## 掘金文章源码索引
 
@@ -176,15 +180,24 @@ const router = createRouter({
 **animation**
 
 - [背景抖动](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/background-shake/index.vue)
-- [混合模式](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/blend-mode/index.vue)
+- [翻页时钟](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/flip-clock/index.vue)
 - [滚动楼层切换](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/floor-change/index.vue)
 - [GSAP ScrollTrigger 基础](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/gsap-basics/index.vue)
-- [Hover 高亮导航](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/hover-navbar/index.vue)
 - [相册动画](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/photo-album/index.vue)
-- [下拉刷新](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/refresh/index.vue)
-- [滑动交互](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/slide/index.vue)
-- [文本省略](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/text-ellipsis/index.vue)
-- [鼠标跟随倾斜](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/tilt-card/index.vue)
+
+**css-effects**
+
+- [混合模式](https://github.com/mhrealm/vue-practice/blob/master/src/views/css-effects/blend-mode/index.vue)
+- [文本省略](https://github.com/mhrealm/vue-practice/blob/master/src/views/css-effects/text-ellipsis/index.vue)
+
+**interaction**
+
+- [Hover 高亮导航](https://github.com/mhrealm/vue-practice/blob/master/src/views/interaction/hover-navbar/index.vue)
+- [jQuery 交互动效](https://github.com/mhrealm/vue-practice/blob/master/src/views/interaction/jquery-effects/index.vue)
+- [加载与刷新](https://github.com/mhrealm/vue-practice/blob/master/src/views/interaction/load-refresh/index.vue)
+- [滚动加载](https://github.com/mhrealm/vue-practice/blob/master/src/views/interaction/refresh/index.vue)
+- [滑动交互](https://github.com/mhrealm/vue-practice/blob/master/src/views/interaction/slide/index.vue)
+- [鼠标跟随倾斜](https://github.com/mhrealm/vue-practice/blob/master/src/views/interaction/tilt-card/index.vue)
 
 **canvas**
 
@@ -202,18 +215,15 @@ const router = createRouter({
 - [Map 实战：数组勾选对比示例](https://github.com/mhrealm/vue-practice/blob/master/src/views/javascript/map-usage/NormalDemo.vue)
 - [Map 实战：合并订单编辑状态](https://github.com/mhrealm/vue-practice/blob/master/src/views/javascript/map-usage/OrderMerge.vue)
 
-**jquery**
+**performance**
 
-- [jQuery 交互动效](https://github.com/mhrealm/vue-practice/blob/master/src/views/jquery/jquery-effects/index.vue)
+- [图片懒加载](https://github.com/mhrealm/vue-practice/blob/master/src/views/performance/lazy-image/index.vue)
 
 **vue**
 
 - [如何监听键盘事件？](https://github.com/mhrealm/vue-practice/blob/master/src/views/vue/keyboard-events/index.vue)
 - [如何定义全局的方法？](https://github.com/mhrealm/vue-practice/blob/master/src/views/vue/global-methods/index.vue)
 - [怎么实现强制刷新组件？](https://github.com/mhrealm/vue-practice/blob/master/src/views/vue/component-refresh/index.vue)
-- [图片懒加载](https://github.com/mhrealm/vue-practice/blob/master/src/views/vue/lazy-image/index.vue)
-- [加载与刷新](https://github.com/mhrealm/vue-practice/blob/master/src/views/vue/load-refresh/index.vue)
-- [翻页时钟](https://github.com/mhrealm/vue-practice/blob/master/src/views/vue/flip-clock/index.vue)
 
 ## 新增练习页面
 
@@ -232,7 +242,7 @@ src/views/animation/example/index.vue
 {
   "meta": {
     "title": "示例练习",
-    "category": "animation",
+    "category": "动画动效",
     "tag": "Demo"
   }
 }
@@ -251,6 +261,42 @@ src/views/classic-replica/
 
 ```json
 "category": "经典复刻"
+```
+
+如果是按钮、导航、滑动、刷新、鼠标响应这类页面行为，优先放到：
+
+```text
+src/views/interaction/
+```
+
+并使用：
+
+```json
+"category": "交互组件"
+```
+
+如果是文本省略、混合模式、布局技巧这类 CSS 方案，优先放到：
+
+```text
+src/views/css-effects/
+```
+
+并使用：
+
+```json
+"category": "CSS 布局与效果"
+```
+
+如果是图片懒加载、资源预加载、首屏加载、渲染优化这类性能相关示例，优先放到：
+
+```text
+src/views/performance/
+```
+
+并使用：
+
+```json
+"category": "性能优化"
 ```
 
 ## 全局配置
@@ -286,7 +332,7 @@ Vite 会给所有 Less 文件注入：
 
 - 新页面优先放在 `src/views` 下，依靠自动路由生成访问路径。
 - 需要展示在首页的练习必须配置 `meta.title`。
-- 一级目录会影响首页菜单分组，复刻类案例放到 `classic-replica`。
+- 一级目录会影响首页菜单分组，动效放到 `animation`，交互放到 `interaction`，CSS 方案放到 `css-effects`，复刻类案例放到 `classic-replica`，性能类案例放到 `performance`。
 - 从 React 示例迁移来的页面统一改成 Vue SFC，样式优先内联到 `.vue` 中。
 - 使用动画库、滚动监听、定时器、IntersectionObserver 或第三方实例时，组件卸载时要清理。
 - 运行 `pnpm build` 可以同时做 TypeScript 检查和生产构建。

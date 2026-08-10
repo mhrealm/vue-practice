@@ -135,7 +135,7 @@ onBeforeUnmount(() => {
 <route lang="json">{
   "meta": {
     "title": "Canvas 序列帧滚动",
-    "category": "Canvas",
+    "category": "Canvas 实验",
     "tag": "Canvas"
   }
 }</route>

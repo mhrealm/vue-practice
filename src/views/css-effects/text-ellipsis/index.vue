@@ -185,7 +185,7 @@ onBeforeUnmount(() => {
 <route lang="json">{
   "meta": {
     "title": "文本省略",
-    "category": "animation",
-    "tag": "text-ellipsis"
+    "category": "CSS 布局与效果",
+    "tag": "文本处理"
   }
 }</route>
