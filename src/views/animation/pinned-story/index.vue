@@ -80,14 +80,12 @@ const getCardNodes = groupId => {
 // 计算整条轨道需要移动的距离，让目标卡片对齐舞台中心。
 const getMoveX = targetCard => () => {
   const stage = stageRef.value
-  const cardTrack = cardTrackRef.value
-  if (!stage || !cardTrack) return 0
+  if (!stage) return 0
   const stageRect = stage.getBoundingClientRect()
   const cardRect = targetCard.getBoundingClientRect()
-  const currentX = Number(gsap.getProperty(cardTrack, 'x'))
   const stageCenter = stageRect.left + stageRect.width / 2
   const cardCenter = cardRect.left + cardRect.width / 2
-  return currentX + stageCenter - cardCenter
+  return stageCenter - cardCenter
 }
 
 const playFromStart = video => {

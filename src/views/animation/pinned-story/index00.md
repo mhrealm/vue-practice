@@ -252,14 +252,21 @@ const storyGroups= [
 const getMoveX = targetCard => () => {
   const stageRect = stageRef.value.getBoundingClientRect()
   const cardRect = targetCard.getBoundingClientRect()
-  const currentX = Number(gsap.getProperty(cardTrackRef.value, 'x'))
   const stageCenter = stageRect.left + stageRect.width / 2
   const cardCenter = cardRect.left + cardRect.width / 2
-  return currentX + stageCenter - cardCenter
+  return stageCenter - cardCenter
 }
 ```
 
 这里没有写死 x 的值，是因为屏幕宽度、卡片宽度、响应式布局都会影响最终距离。
+
+在这套动画里，每一张卡片的详情内容播放完成后，轨道都会先回到 `x: 0`，下一张卡片再重新进入中心。所以这里不需要再读取当前轨道的 `x` 值，只需要计算两个中心点之间的差值：
+
+```txt
+轨道需要移动的距离 = 舞台中心点 - 当前卡片中心点
+```
+
+如果结果是负数，说明卡片在舞台中心右侧，轨道需要往左移动；如果结果是正数，说明卡片在舞台中心左侧，轨道需要往右移动。
 
 #### 第五步：编排卡片动画
 
