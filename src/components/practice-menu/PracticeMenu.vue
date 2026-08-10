@@ -1,9 +1,8 @@
 <template>
   <div class="practice-menu">
-    <section v-for="group in groups" :key="group.categoryKey" class="practice-menu__group">
-      <h4 class="practice-menu__group-title">{{ group.category }}</h4>
-      <nav>
-        <ul class="practice-menu__list">
+    <nav>
+      <ul class="practice-menu__list">
+        <template v-for="group in groups" :key="group.categoryKey">
           <li v-for="item in group.items" :key="item.path" class="practice-menu__item">
             <router-link :to="item.path" class="practice-menu__link">
               <span class="practice-menu__badge" :style="{ backgroundColor: group.categoryColor }">
@@ -13,15 +12,15 @@
               <span v-if="item.tag" class="practice-menu__tag">#{{ item.tag }}</span>
             </router-link>
           </li>
-        </ul>
-      </nav>
-    </section>
+        </template>
+      </ul>
+    </nav>
   </div>
 </template>
 
 <script setup>
 defineProps({
-  // 已按一级目录分组后的菜单数据，颜色也在生成阶段分配好。
+  // 已按一级目录分组后的菜单数据；组件会摊平成一个连续网格展示。
   groups: {
     type: Array,
     default: () => [],
@@ -33,17 +32,6 @@ defineProps({
 .practice-menu {
   margin: 28px auto;
   padding: 0 24px;
-}
-
-.practice-menu__group+.practice-menu__group {
-  margin-top: 36px;
-}
-
-.practice-menu__group-title {
-  margin: 0 0 16px;
-  font-size: 20px;
-  font-weight: 600;
-  color: #333;
 }
 
 .practice-menu__list {
