@@ -246,7 +246,7 @@ const storyGroups= [
 
 所以当某张卡片要进入中心时，本质上是计算：
 
-> 整条轨道需要移动多少，才能让当前卡片的中心点和舞台中心点重合。
+整条轨道需要移动多少，才能让当前卡片的中心点和舞台中心点重合。
 
 ```js
 const getMoveX = targetCard => () => {
@@ -258,13 +258,7 @@ const getMoveX = targetCard => () => {
 }
 ```
 
-这里没有写死 x 的值，是因为屏幕宽度、卡片宽度、响应式布局都会影响最终距离。
-
-在这套动画里，每一张卡片的详情内容播放完成后，轨道都会先回到 `x: 0`，下一张卡片再重新进入中心。所以这里不需要再读取当前轨道的 `x` 值，只需要计算两个中心点之间的差值：
-
-```txt
 轨道需要移动的距离 = 舞台中心点 - 当前卡片中心点
-```
 
 如果结果是负数，说明卡片在舞台中心右侧，轨道需要往左移动；如果结果是正数，说明卡片在舞台中心左侧，轨道需要往右移动。
 
@@ -389,54 +383,6 @@ const timeline = gsap.timeline({
 
 scrub: 1 表示滚动进度和动画进度绑定，并带一点缓冲。
 invalidateOnRefresh: true 很重要，因为轨道移动距离是动态计算的，窗口尺寸变化后需要重新计算。
-
-如果详情 section 里只有图片，动画切换到这里基本就结束了。但如果某个 section 里放了视频，还需要额外处理播放状态。
-
-原因很简单：视频不会因为它所在的 section 透明度变成 0 就自动暂停。如果不处理，可能会出现两个问题：
-
-1. section 已经淡出了，但视频还在后台继续播放；
-2. 用户反向滚动回来时，视频不是从头开始，而是从中间继续播放。
-
-所以这里需要根据当前可见的 section，动态控制视频播放。
-
-先定义一个变量记录当前正在播放的视频：
-
-```js
-let activeVideo = null
-```
-
-然后封装一个从头播放视频的方法：
-
-```js
-const playFromStart = video => {
-  try {
-    video.currentTime = 0
-    video.play().catch(() => undefined)
-  } catch {
-    video.play().catch(() => undefined)
-  }
-}
-```
-
-这里用了 `try...catch` 和 `.catch()`，是因为浏览器对自动播放有策略限制。虽然视频已经设置了 `muted` 和 `playsinline`，但 `video.play()` 仍然可能失败，所以这里做一个兜底，不让播放失败影响主动画。
-
-接着封装暂停所有视频的方法：
-
-```js
-const pauseAllVideos = () => {
-  activeVideo = null
-
-  containerRef.value?.querySelectorAll('video').forEach(video => {
-    video.pause()
-  })
-}
-```
-
-然后在初始化动画时，先找到所有视频，以及它们所在的 section：
-
-```js
-const videos = Array.from(containerRef.value.querySelectorAll('video'))
-```
 
 #### 第九步：处理视频播放
 
@@ -617,6 +563,7 @@ onBeforeUnmount(() => {
 
 ## 放在最后的话
 
+虽然上面的代码有很大一部分不是我自己写的，
 为什么在 AI 时代，我认为代码能力反而变得更重要了？
 
 也许你会笑话现在还有人手敲代码，对于这样的动画使用 AI 几分钟就可以完美复刻。事实确实如此，当大多人都在追求 “快” 的时候，而少数愿意慢下来认真的看 AI 写了什么？思考同样的动画该如何构思？有没有更优解的人注定是被嘲笑的。但是这并不意味着写代码的价值消失了。
