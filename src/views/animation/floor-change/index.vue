@@ -210,3 +210,11 @@ html {
   object-fit: cover;
 }
 </style>
+
+<route lang="json">{
+  "meta": {
+    "title": "楼层转场动画",
+    "category": "animation",
+    "tag": "GSAP"
+  }
+}</route>
