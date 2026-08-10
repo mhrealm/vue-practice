@@ -164,7 +164,7 @@ html {
 <route lang="json">{
   "meta": {
     "title": "3D 地球仪",
-    "category": "animation",
+    "category": "经典复刻",
     "tag": "动效"
   }
 }</route>

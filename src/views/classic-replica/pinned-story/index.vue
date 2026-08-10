@@ -406,7 +406,7 @@ onBeforeUnmount(() => {
 <route lang="json">{
   "meta": {
     "title": "Pinned 滚动叙事楼层",
-    "category": "animation",
+    "category": "经典复刻",
     "tag": "GSAP"
   }
 }</route>
