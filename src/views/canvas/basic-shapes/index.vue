@@ -131,6 +131,7 @@ onMounted(drawShapes)
   "meta": {
     "title": "Canvas 基础图形",
     "category": "Canvas 实验",
-    "tag": "Canvas"
+    "tag": "Canvas",
+    "difficulty": 1
   }
 }</route>

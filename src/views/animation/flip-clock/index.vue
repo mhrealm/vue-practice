@@ -40,6 +40,7 @@
   "meta": {
     "title": "翻页时钟",
     "category": "动画动效",
-    "tag": "时钟动效"
+    "tag": "时钟动效",
+    "difficulty": 3
   }
 }</route>

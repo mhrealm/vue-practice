@@ -28,6 +28,7 @@ const handleRefresh2 = async () => {
   "meta": {
     "title": "怎么实现强制刷新组件？",
     "category": "Vue 基础",
-    "tag": "基础交互"
+    "tag": "基础交互",
+    "difficulty": 2
   }
 }</route>

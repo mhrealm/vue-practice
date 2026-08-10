@@ -262,6 +262,7 @@ onBeforeUnmount(() => {
   "meta": {
     "title": "骨架屏",
     "category": "性能优化",
-    "tag": "Skeleton"
+    "tag": "Skeleton",
+    "difficulty": 2
   }
 }</route>

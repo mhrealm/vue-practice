@@ -407,6 +407,7 @@ onBeforeUnmount(() => {
   "meta": {
     "title": "Pinned 滚动叙事楼层",
     "category": "经典复刻",
-    "tag": "GSAP"
+    "tag": "GSAP",
+    "difficulty": 5
   }
 }</route>

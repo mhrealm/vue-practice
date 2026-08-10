@@ -149,13 +149,14 @@ const router = createRouter({
   "meta": {
     "title": "示例练习",
     "category": "Vue 基础",
-    "tag": "基础"
+    "tag": "基础",
+    "difficulty": 1
   }
 }
 </route>
 ```
 
-首页菜单会筛选带 `meta.title` 的路由。菜单分组以 `src/views` 下的一级目录为基础，展示文案优先使用页面里的 `meta.category`。
+首页菜单会筛选带 `meta.title` 的路由。菜单分组以 `src/views` 下的一级目录为基础，展示文案优先使用页面里的 `meta.category`。`meta.difficulty` 表示案例难度，范围为 1-5 星。
 
 ## 当前练习页面
 
@@ -249,7 +250,8 @@ src/views/animation/example/index.vue
   "meta": {
     "title": "示例练习",
     "category": "动画动效",
-    "tag": "Demo"
+    "tag": "Demo",
+    "difficulty": 3
   }
 }
 </route>

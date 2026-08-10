@@ -212,6 +212,7 @@ onBeforeUnmount(() => {
   "meta": {
     "title": "图片预加载",
     "category": "性能优化",
-    "tag": "Preload"
+    "tag": "Preload",
+    "difficulty": 3
   }
 }</route>

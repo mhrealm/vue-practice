@@ -216,6 +216,7 @@ onBeforeUnmount(() => {
   "meta": {
     "title": "jQuery 交互动效",
     "category": "交互组件",
-    "tag": "jQuery"
+    "tag": "jQuery",
+    "difficulty": 2
   }
 }</route>

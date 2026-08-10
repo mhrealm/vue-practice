@@ -60,6 +60,7 @@
   "meta": {
     "title": "背景抖动",
     "category": "动画动效",
-    "tag": "视觉动效"
+    "tag": "视觉动效",
+    "difficulty": 2
   }
 }</route>

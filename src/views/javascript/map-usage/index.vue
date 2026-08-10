@@ -39,6 +39,7 @@ import OrderMerge from './OrderMerge.vue'
   "meta": {
     "title": "Map 管理列表选择",
     "category": "JavaScript 实战",
-    "tag": "Map"
+    "tag": "Map",
+    "difficulty": 3
   }
 }</route>

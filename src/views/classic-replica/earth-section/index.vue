@@ -165,6 +165,7 @@ html {
   "meta": {
     "title": "3D 地球仪",
     "category": "经典复刻",
-    "tag": "动效"
+    "tag": "动效",
+    "difficulty": 5
   }
 }</route>

@@ -214,6 +214,7 @@ onBeforeUnmount(() => {
   "meta": {
     "title": "上拉加载下拉刷新",
     "category": "交互组件",
-    "tag": "列表加载"
+    "tag": "列表加载",
+    "difficulty": 3
   }
 }</route>

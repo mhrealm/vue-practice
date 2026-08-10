@@ -100,6 +100,7 @@ html {
   "meta": {
     "title": "鼠标跟随倾斜",
     "category": "交互组件",
-    "tag": "鼠标交互"
+    "tag": "鼠标交互",
+    "difficulty": 3
   }
 }</route>

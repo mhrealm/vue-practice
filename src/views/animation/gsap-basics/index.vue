@@ -88,6 +88,7 @@ onBeforeUnmount(() => {
   "meta": {
     "title": "GSAP ScrollTrigger 基础",
     "category": "动画动效",
-    "tag": "GSAP"
+    "tag": "GSAP",
+    "difficulty": 3
   }
 }</route>

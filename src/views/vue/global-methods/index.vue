@@ -28,6 +28,7 @@ const handleShowToastClick = () => {
   "meta": {
     "title": "如何定义全局的方法？",
     "category": "Vue 基础",
-    "tag": "基础交互"
+    "tag": "基础交互",
+    "difficulty": 1
   }
 }</route>

@@ -95,6 +95,7 @@ onMounted(drawTransformDemo)
   "meta": {
     "title": "Canvas 变形",
     "category": "Canvas 实验",
-    "tag": "Canvas"
+    "tag": "Canvas",
+    "difficulty": 2
   }
 }</route>

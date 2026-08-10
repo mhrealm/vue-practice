@@ -185,6 +185,7 @@ onBeforeUnmount(() => {
   "meta": {
     "title": "Canvas 电子签名",
     "category": "Canvas 实验",
-    "tag": "Canvas"
+    "tag": "Canvas",
+    "difficulty": 3
   }
 }</route>

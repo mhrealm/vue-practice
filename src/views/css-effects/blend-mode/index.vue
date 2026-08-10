@@ -39,6 +39,7 @@
   "meta": {
     "title": "混合模式",
     "category": "CSS 布局与效果",
-    "tag": "混合模式"
+    "tag": "混合模式",
+    "difficulty": 2
   }
 }</route>

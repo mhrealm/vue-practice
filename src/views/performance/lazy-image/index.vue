@@ -12,6 +12,7 @@ import Basic from './basic.vue'
   "meta": {
     "title": "图片懒加载",
     "category": "性能优化",
-    "tag": "Lazy Load"
+    "tag": "Lazy Load",
+    "difficulty": 3
   }
 }</route>

@@ -10,6 +10,14 @@
               </span>
               <span class="practice-menu__title" :title="item.title">{{ item.title }}</span>
               <span v-if="item.tag" class="practice-menu__tag">#{{ item.tag }}</span>
+              <span class="practice-menu__difficulty" :title="`难度 ${item.difficulty} 星`" :aria-label="`难度 ${item.difficulty} 星`">
+                <span class="practice-menu__difficulty-label">难度</span>
+                <span class="practice-menu__stars" aria-hidden="true">
+                  <span v-for="star in 5" :key="star" class="practice-menu__star" :class="{ 'practice-menu__star--active': star <= item.difficulty }">
+                    ★
+                  </span>
+                </span>
+              </span>
             </router-link>
           </li>
         </template>
@@ -109,6 +117,32 @@ defineProps({
 .practice-menu__tag {
   font-size: 12px;
   color: #999;
+}
+
+.practice-menu__difficulty {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.practice-menu__difficulty-label {
+  color: #64748b;
+}
+
+.practice-menu__stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.practice-menu__star {
+  color: #cbd5e1;
+}
+
+.practice-menu__star--active {
+  color: #f59e0b;
 }
 
 @media (max-width: 640px) {

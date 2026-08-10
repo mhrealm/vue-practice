@@ -134,6 +134,7 @@ onBeforeUnmount(() => {
   "meta": {
     "title": "Canvas 轨道动画",
     "category": "Canvas 实验",
-    "tag": "Canvas"
+    "tag": "Canvas",
+    "difficulty": 3
   }
 }</route>

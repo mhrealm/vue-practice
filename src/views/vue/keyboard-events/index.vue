@@ -51,6 +51,7 @@ onUnmounted(() => {
   "meta": {
     "title": "如何监听键盘事件？",
     "category": "Vue 基础",
-    "tag": "基础交互"
+    "tag": "基础交互",
+    "difficulty": 1
   }
 }</route>
