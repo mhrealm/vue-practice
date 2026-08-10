@@ -1,8 +1,8 @@
 # Vue Vite Practice
 
-一个基于 **Vue 3 + Vite + TypeScript** 的前端练习项目，用来沉淀 Vue 基础交互、自动路由、GSAP 滚动动画、3D 可视化和 CSS 3D 动效示例。
+一个基于 **Vue 3 + Vite + TypeScript** 的前端练习项目，用来沉淀 Vue 基础能力、JavaScript 实战、Canvas 示例、jQuery 交互、GSAP 动画和经典官网效果复刻。
 
-项目首页会读取 `src/views` 下的路由信息，并根据页面中的 `meta` 配置自动生成练习入口。
+项目首页会读取 `src/views` 下自动生成的路由，并根据页面中的 `meta` 配置生成练习入口。
 
 ## 技术栈
 
@@ -14,6 +14,8 @@
 - Less
 - GSAP / ScrollTrigger
 - Three.js / globe.gl
+- Canvas
+- jQuery
 
 ## 快速开始
 
@@ -54,25 +56,54 @@ npm run dev
 
 ```text
 vue-vite-practice/
-├─ public/                  # 静态资源
+├─ public/                      # 静态资源
 ├─ src/
-│  ├─ assets/               # Vite 模板资源
-│  ├─ components/           # 可复用组件
-│  │  └─ issues/            # Vue 问题示例组件
-│  ├─ images/               # 页面使用的图片资源
-│  ├─ router/               # 路由入口
-│  ├─ styles/               # 全局 Less 变量
-│  ├─ views/                # 页面练习集合，自动生成路由
-│  │  ├─ index.vue          # 首页菜单
-│  │  ├─ [...all].vue       # 404 页面
-│  │  ├─ canvas-sequence/   # Canvas 序列帧滚动练习
-│  │  ├─ earth-section/     # 3D 地球仪练习
-│  │  ├─ floor-change/      # 滚动楼层切换练习
-│  │  ├─ gsap-basics/       # GSAP ScrollTrigger 基础练习
-│  │  ├─ hover-navbar/      # 导航 Hover 高亮练习
-│  │  ├─ issues/            # Vue 基础问题练习
-│  │  ├─ jquery-effects/    # jQuery 交互动效练习
-│  │  └─ tilt-card/         # 鼠标跟随倾斜卡片练习
+│  ├─ assets/                   # Vite 模板资源
+│  ├─ components/               # 可复用组件
+│  │  ├─ issues/                # Vue 问题示例组件
+│  │  └─ practice-menu/         # 首页练习菜单
+│  ├─ composables/              # 组合式函数
+│  ├─ constants/                # 常量配置
+│  ├─ images/                   # 页面使用的图片资源
+│  ├─ router/                   # 路由入口
+│  ├─ styles/                   # 全局 Less 变量
+│  ├─ utils/                    # 工具函数
+│  ├─ views/                    # 页面练习集合，自动生成路由
+│  │  ├─ index.vue              # 首页菜单
+│  │  ├─ [...all].vue           # 404 页面
+│  │  ├─ animation/             # 动画与交互练习
+│  │  │  ├─ background-shake/
+│  │  │  ├─ blend-mode/
+│  │  │  ├─ floor-change/
+│  │  │  ├─ gsap-basics/
+│  │  │  ├─ hover-navbar/
+│  │  │  ├─ photo-album/
+│  │  │  ├─ refresh/
+│  │  │  ├─ slide/
+│  │  │  ├─ text-ellipsis/
+│  │  │  └─ tilt-card/
+│  │  ├─ canvas/                # Canvas 练习
+│  │  │  ├─ basic-shapes/
+│  │  │  ├─ canvas-sequence/
+│  │  │  ├─ orbit-animation/
+│  │  │  ├─ signature/
+│  │  │  └─ transform/
+│  │  ├─ classic-replica/       # 经典复刻系列
+│  │  │  ├─ earth-section/
+│  │  │  ├─ pinned-story/
+│  │  │  └─ qa-session/
+│  │  ├─ javascript/            # JavaScript 实战
+│  │  │  ├─ async-delay/
+│  │  │  └─ map-usage/
+│  │  ├─ jquery/                # jQuery 示例
+│  │  │  └─ jquery-effects/
+│  │  └─ vue/                   # Vue 基础与业务组件练习
+│  │     ├─ component-refresh/
+│  │     ├─ flip-clock/
+│  │     ├─ global-methods/
+│  │     ├─ keyboard-events/
+│  │     ├─ lazy-image/
+│  │     └─ load-refresh/
 │  ├─ App.vue
 │  ├─ env.d.ts
 │  └─ main.ts
@@ -105,50 +136,7 @@ const router = createRouter({
 })
 ```
 
-如果希望页面出现在首页菜单中，需要在页面里补充 `route meta`：
-
-```vue
-<route lang="json">
-{
-  "meta": {
-    "title": "鼠标跟随倾斜",
-    "category": "animation",
-    "tag": "动效"
-  }
-}
-</route>
-```
-
-首页 `src/views/index.vue` 会读取所有路由，筛选带 `meta.title` 的页面并渲染为练习入口。
-
-## 当前练习页面
-
-| 模块         | 说明                                                   |
-| ------------ | ------------------------------------------------------ |
-| 首页菜单     | 自动读取路由 `meta`，展示练习入口                      |
-| 3D 地球仪    | 基于 `globe.gl`、Three.js 和 GSAP 的地球滚动动效示例   |
-| Canvas 序列帧滚动 | 基于 Canvas 和 GSAP ScrollTrigger 的滚动序列帧动画 |
-| GSAP 基础 | 演示 GSAP 位移动画和 ScrollTrigger 滚动触发 |
-| Hover 高亮导航 | 鼠标悬停时跟随菜单项移动的导航高亮效果 |
-| jQuery 交互动效 | 演示 jQuery 基础事件、样式、动画和打字机效果 |
-| 鼠标跟随倾斜 | 基于鼠标位置计算 `rotateX` / `rotateY` 的 CSS 3D 卡片  |
-| 滚动楼层切换 | 基于 GSAP ScrollTrigger 的滚动分屏切换动画             |
-| 全局方法     | 演示 `app.config.globalProperties` 和 `provide/inject` |
-| 键盘事件     | 演示 Vue 内置键盘修饰符、自定义组合键和全局键盘监听    |
-| 强制刷新组件 | 演示通过 `key` 和 `v-if + nextTick` 重新渲染组件       |
-| 404 页面     | 捕获未匹配路由并返回首页                               |
-
-## 新增练习页面
-
-1. 在 `src/views` 下新增页面文件或目录，例如：
-
-```text
-src/views/example/index.vue
-```
-
-2. 编写页面组件。
-
-3. 添加 `route meta`，让首页菜单可以展示这个练习：
+如果希望页面出现在首页菜单中，需要在页面中补充 `route meta`：
 
 ```vue
 <route lang="json">
@@ -162,7 +150,56 @@ src/views/example/index.vue
 </route>
 ```
 
+首页菜单会筛选带 `meta.title` 的路由。菜单分组以 `src/views` 下的一级目录为基础，展示文案优先使用页面里的 `meta.category`。
+
+## 当前练习页面
+
+| 分类           | 页面                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 经典复刻       | 3D 地球仪、Pinned 滚动叙事楼层、网易音乐七夕活动复刻                                                                            |
+| Animation      | 背景抖动、混合模式、楼层转场动画、GSAP ScrollTrigger 基础、Hover 高亮导航、相册动画、下拉刷新、滑动交互、文本省略、鼠标跟随倾斜 |
+| Canvas         | Canvas 基础图形、Canvas 序列帧滚动、Canvas 轨道动画、Canvas 电子签名、Canvas 变形                                               |
+| JavaScript     | 异步调用与延迟执行、Map 管理列表选择                                                                                            |
+| jQuery         | jQuery 交互动效                                                                                                                 |
+| Vue / Function | 全局方法、强制刷新组件、键盘事件、图片懒加载、加载与刷新、翻页时钟                                                              |
+
+## 新增练习页面
+
+1. 在 `src/views` 下选择合适分类目录，例如：
+
+```text
+src/views/animation/example/index.vue
+```
+
+2. 编写页面组件。
+
+3. 添加 `route meta`，让首页菜单可以展示这个练习：
+
+```vue
+<route lang="json">
+{
+  "meta": {
+    "title": "示例练习",
+    "category": "animation",
+    "tag": "Demo"
+  }
+}
+</route>
+```
+
 4. 启动开发服务，在首页点击对应入口验证效果。
+
+如果是官网、营销活动、交互案例复刻，优先放到：
+
+```text
+src/views/classic-replica/
+```
+
+并使用：
+
+```json
+"category": "经典复刻"
+```
 
 ## 全局配置
 
@@ -191,25 +228,13 @@ Vite 会给所有 Less 文件注入：
 - `$showToast`：通过 `app.config.globalProperties` 挂载的全局方法
 - `$sayHello`：通过 `provide` 注入的全局方法
 
-对应示例在 `src/views/issues/global-methods.vue`。
-
-## 命名整理建议
-
-项目当前已经从 `hello-*` 方向调整为更清晰的练习仓库命名，建议后续继续保持：
-
-- 父目录：`frontend-practice-lab`
-- 当前项目：`vue-vite-practice`
-- React 项目：`practice-react`
-
-后续可逐步优化：
-
-- 给 `src/views/floor-change/index.vue` 补充 `route meta`，让它稳定出现在首页菜单中。
-- 页面目录命名保持 2 个单词以内，例如 `gsap-basics`、`hover-navbar`。
-- 如果历史 Markdown 或注释里出现中文乱码，统一转换为 UTF-8 编码。
+对应示例在 `src/views/vue/global-methods/index.vue`。
 
 ## 开发注意事项
 
-- 新页面优先放在 `src/views`，依靠自动路由生成访问路径。
+- 新页面优先放在 `src/views` 下，依靠自动路由生成访问路径。
 - 需要展示在首页的练习必须配置 `meta.title`。
-- 使用动画库时注意在组件卸载时清理事件监听、定时器和第三方实例。
+- 一级目录会影响首页菜单分组，复刻类案例放到 `classic-replica`。
+- 从 React 示例迁移来的页面统一改成 Vue SFC，样式优先内联到 `.vue` 中。
+- 使用动画库、滚动监听、定时器、IntersectionObserver 或第三方实例时，组件卸载时要清理。
 - 运行 `pnpm build` 可以同时做 TypeScript 检查和生产构建。
