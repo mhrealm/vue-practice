@@ -187,11 +187,3 @@ onBeforeUnmount(clearTimers)
   z-index: 100;
 }
 </style>
-
-<route lang="json">{
-  "meta": {
-    "title": "问答会话版本3",
-    "category": "function",
-    "tag": "qa-session"
-  }
-}</route>

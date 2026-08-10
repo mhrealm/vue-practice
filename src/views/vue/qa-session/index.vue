@@ -17,7 +17,7 @@ import Version2 from './version-2.vue'
 
 <route lang="json">{
   "meta": {
-    "title": "问答会话",
+    "title": "网易音乐七夕活动复刻",
     "category": "function",
     "tag": "qa-session"
   }

@@ -114,11 +114,3 @@ const handleAnsweringQuestion = () => {
   transition: opacity 1s ease-in-out;
 }
 </style>
-
-<route lang="json">{
-  "meta": {
-    "title": "问答会话版本1",
-    "category": "function",
-    "tag": "qa-session"
-  }
-}</route>
