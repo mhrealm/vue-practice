@@ -1,5 +1,3 @@
-
-
 # 鼠标跟随倾斜动效卡片
 
 ## 前言：
@@ -31,7 +29,7 @@
 - transform-style: preserve-3d 是**舞台搭建**，决定了演员（元素）能不能在台前幕后来回走动，而不是画在背景板上。
 - transform: rotate / translate 是**演员的动作**，决定了物体怎么摆放和移动。
 
-## 效果展示 
+## 效果展示
 
 如果你已经理解了上面属性，相信实现效果只是时间的问题，下面我就提前剧透一下效果吧！同时在浏览器中为你演示各个的属性的具体效果，让你更加深刻的理解上面的属性。
 
@@ -40,7 +38,7 @@
 上面是一个正常的效果，试想一下，如果没有设置 perspective 属性会怎么样呢？为了更好的演示，我会将卡片绕着它的y轴固定旋转30度。然后对比设置了 perspective 属性和没有设置 perspective 的效果如下，可供参考。
 ![alt text](image-2.png)
 
-在对比了设置 perspective 的作用后，接下来为你演示  transform-style: preserve-3d 的效果，为了更好的演示，接下来调整一下卡片在y轴的旋转角度为-80度，同时对子元素设置 transform: translateZ(50px); 将背景调整为白色，让文字和背景不会重合。对比效果如下：
+在对比了设置 perspective 的作用后，接下来为你演示 transform-style: preserve-3d 的效果，为了更好的演示，接下来调整一下卡片在y轴的旋转角度为-80度，同时对子元素设置 transform: translateZ(50px); 将背景调整为白色，让文字和背景不会重合。对比效果如下：
 ![alt text](image-3.png)
 
 从上面的效果可以看出，设置了 transform-style: preserve-3d 的文字和背景卡片是分离的，没有设置 transform-style: preserve-3d 的文字被拍扁在卡片上面。
@@ -56,7 +54,7 @@
 ```vue
 <template>
   <div class="container">
-    <div 
+    <div
       class="card"
       ref="cardRef"
       :style="cardStyle"
@@ -96,7 +94,7 @@ const handleMouseMove = (e) => {
   const rect = cardRef.value.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
-  
+
   // 计算鼠标距离中心点的偏移量 (-1 到 1)
   const percentX = (e.clientX - centerX) / (rect.width / 2);
   const percentY = (e.clientY - centerY) / (rect.height / 2);
@@ -115,7 +113,7 @@ const handleMouseLeave = () => {
 <style scoped>
 .container {
   /* 3D 透视的关键 */
-  perspective: 1000px; 
+  perspective: 1000px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -144,7 +142,7 @@ const handleMouseLeave = () => {
   font-size: 2.5rem;
   color: #000;
   /* 让文字在 3D 空间悬浮 */
-  transform: translateZ(50px); 
+  transform: translateZ(50px);
   pointer-events: none;
 }
 </style>
@@ -157,16 +155,9 @@ const handleMouseLeave = () => {
 3. 计算偏移量： 这里主要利用鼠标当前的位置减去卡片中心点计算出偏移距离，然后再除以卡片宽高的一半，等到一个-1到1的偏移值。
 4. 角度映射：通过得到的偏移值乘以 deg (25度)，刚好可以映射到对应的角度，比如鼠标移动到最左边，卡片正好偏转 -25度。
 
-
 ## 优化补充
 
 下面是一些优化的建议，有兴趣的同学可以自己实现一下：
 
 1. 增加光影变化，跟随鼠标移动的卡片增加渐变层的光影，让整体更加真实。
 2. mousemove在移动端不支持，增加移动端的支持。
-
-
-
-
-
-
