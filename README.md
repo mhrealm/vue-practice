@@ -163,6 +163,58 @@ const router = createRouter({
 | jQuery         | jQuery 交互动效                                                                                                                 |
 | Vue / Function | 全局方法、强制刷新组件、键盘事件、图片懒加载、加载与刷新、翻页时钟                                                              |
 
+## 掘金文章源码索引
+
+下面链接可以直接用于掘金文章中的“源码地址”引用。
+
+**经典复刻**
+
+- [3D 地球仪](https://github.com/mhrealm/vue-practice/blob/master/src/views/classic-replica/earth-section/index.vue)
+- [Pinned 滚动叙事楼层](https://github.com/mhrealm/vue-practice/blob/master/src/views/classic-replica/pinned-story/index.vue)
+- [网易音乐七夕活动复刻](https://github.com/mhrealm/vue-practice/blob/master/src/views/classic-replica/qa-session/index.vue)
+
+**animation**
+
+- [背景抖动](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/background-shake/index.vue)
+- [混合模式](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/blend-mode/index.vue)
+- [滚动楼层切换](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/floor-change/index.vue)
+- [GSAP ScrollTrigger 基础](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/gsap-basics/index.vue)
+- [Hover 高亮导航](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/hover-navbar/index.vue)
+- [相册动画](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/photo-album/index.vue)
+- [下拉刷新](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/refresh/index.vue)
+- [滑动交互](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/slide/index.vue)
+- [文本省略](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/text-ellipsis/index.vue)
+- [鼠标跟随倾斜](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/tilt-card/index.vue)
+
+**canvas**
+
+- [Canvas 基础图形](https://github.com/mhrealm/vue-practice/blob/master/src/views/canvas/basic-shapes/index.vue)
+- [Canvas 序列帧滚动](https://github.com/mhrealm/vue-practice/blob/master/src/views/canvas/canvas-sequence/index.vue)
+- [Canvas 轨道动画](https://github.com/mhrealm/vue-practice/blob/master/src/views/canvas/orbit-animation/index.vue)
+- [Canvas 电子签名](https://github.com/mhrealm/vue-practice/blob/master/src/views/canvas/signature/index.vue)
+- [Canvas 变形](https://github.com/mhrealm/vue-practice/blob/master/src/views/canvas/transform/index.vue)
+
+**javascript**
+
+- [异步调用与延迟执行](https://github.com/mhrealm/vue-practice/blob/master/src/views/javascript/async-delay/index.vue)
+- [Map 管理列表选择](https://github.com/mhrealm/vue-practice/blob/master/src/views/javascript/map-usage/index.vue)
+- [Map 实战：响应式勾选示例](https://github.com/mhrealm/vue-practice/blob/master/src/views/javascript/map-usage/MapDemo.vue)
+- [Map 实战：数组勾选对比示例](https://github.com/mhrealm/vue-practice/blob/master/src/views/javascript/map-usage/NormalDemo.vue)
+- [Map 实战：合并订单编辑状态](https://github.com/mhrealm/vue-practice/blob/master/src/views/javascript/map-usage/OrderMerge.vue)
+
+**jquery**
+
+- [jQuery 交互动效](https://github.com/mhrealm/vue-practice/blob/master/src/views/jquery/jquery-effects/index.vue)
+
+**vue**
+
+- [如何监听键盘事件？](https://github.com/mhrealm/vue-practice/blob/master/src/views/vue/keyboard-events/index.vue)
+- [如何定义全局的方法？](https://github.com/mhrealm/vue-practice/blob/master/src/views/vue/global-methods/index.vue)
+- [怎么实现强制刷新组件？](https://github.com/mhrealm/vue-practice/blob/master/src/views/vue/component-refresh/index.vue)
+- [图片懒加载](https://github.com/mhrealm/vue-practice/blob/master/src/views/vue/lazy-image/index.vue)
+- [加载与刷新](https://github.com/mhrealm/vue-practice/blob/master/src/views/vue/load-refresh/index.vue)
+- [翻页时钟](https://github.com/mhrealm/vue-practice/blob/master/src/views/vue/flip-clock/index.vue)
+
 ## 新增练习页面
 
 1. 在 `src/views` 下选择合适分类目录，例如：
