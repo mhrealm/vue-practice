@@ -160,16 +160,16 @@ const router = createRouter({
 
 ## 当前练习页面
 
-| 分类           | 页面                                                                                                                            |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| 经典复刻       | 3D 地球仪、Pinned 滚动叙事楼层、网易音乐七夕活动复刻                                                                            |
-| 动画动效       | 背景抖动、楼层转场动画、GSAP ScrollTrigger 基础、相册动画、翻页时钟                                                             |
-| 交互组件       | Hover 高亮导航、jQuery 交互动效、加载与刷新、滚动加载、滑动交互、鼠标跟随倾斜                                                   |
-| CSS 布局与效果 | 混合模式、文本省略                                                                                                              |
-| Canvas 实验    | Canvas 基础图形、Canvas 序列帧滚动、Canvas 轨道动画、Canvas 电子签名、Canvas 变形                                               |
-| JavaScript 实战 | 异步调用与延迟执行、Map 管理列表选择                                                                                           |
-| 性能优化       | 图片懒加载、图片预加载、骨架屏、虚拟列表                                                                                        |
-| Vue 基础       | 全局方法、强制刷新组件、键盘事件                                                                                                |
+| 分类            | 页面                                                                              |
+| --------------- | --------------------------------------------------------------------------------- |
+| 经典复刻        | 3D 地球仪、Pinned 滚动叙事楼层、网易音乐七夕活动复刻                              |
+| 动画动效        | 背景抖动、楼层转场动画、GSAP ScrollTrigger 基础、相册动画、翻页时钟               |
+| 交互组件        | Hover 高亮导航、jQuery 交互动效、加载与刷新、滚动加载、滑动交互、鼠标跟随倾斜     |
+| CSS 布局与效果  | 混合模式、文本省略                                                                |
+| Canvas 实验     | Canvas 基础图形、Canvas 序列帧滚动、Canvas 轨道动画、Canvas 电子签名、Canvas 变形 |
+| JavaScript 实战 | 异步调用与延迟执行、Map 管理列表选择                                              |
+| 性能优化        | 图片懒加载、图片预加载、骨架屏、虚拟列表                                          |
+| Vue 基础        | 全局方法、强制刷新组件、键盘事件                                                  |
 
 ## 掘金文章源码索引
 
@@ -224,7 +224,8 @@ const router = createRouter({
 - [图片懒加载](https://github.com/mhrealm/vue-practice/blob/master/src/views/performance/lazy-image/index.vue)
 - [图片预加载](https://github.com/mhrealm/vue-practice/blob/master/src/views/performance/preload-image/index.vue)
 - [骨架屏](https://github.com/mhrealm/vue-practice/blob/master/src/views/performance/skeleton-screen/index.vue)
-- [虚拟列表](https://github.com/mhrealm/vue-practice/blob/master/src/views/performance/virtual-list/index.vue)
+- [虚拟列表](https://github.com/mhrealm/vue-practice/blob/master/src/views/performance/virtual-list/VirtualList.vue)
+- [普通列表](https://github.com/mhrealm/vue-practice/blob/master/src/views/performance/virtual-list/NormalList.vue)
 
 **vue**
 
