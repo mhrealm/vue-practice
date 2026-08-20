@@ -1,3 +1,8 @@
+---
+theme: vuepress
+highlight: a11y-dark
+---
+
 # 虚拟滚动真的比普通滚动性能更好吗？
 
 ## 前言
@@ -12,9 +17,9 @@
 
 本文主要会围绕以下几个问题进行展开。
 
-1. 从零实现一个固定高度的虚拟列表。
-2. 虚拟滚动是不是一定比普通的滚动性能好？
-3. 什么场景下适合使用虚拟滚动？能提升多少性能？
+1.  从零实现一个固定高度的虚拟列表。
+2.  虚拟滚动是不是一定比普通的滚动性能好？
+3.  什么场景下适合使用虚拟滚动？能提升多少性能？
 
 > 如果你对于虚拟滚动的实现已经了然于心，那就直接观看性能对比的部分吧!
 
@@ -24,9 +29,9 @@
 
 ![alt text](image-3.png)
 
-> 温馨提示：以下代码 `vue3` 编写。至于为什么使用 `vue3` 呢？因为我相信光！！！
+> 温馨提示：以下代码 `vue3` 编写。至于为什么使用 `vue3` 呢？因为相信光！！！
 
-#### 第一步：`mock` 数据
+#### 第一步：mock 数据
 
 ```js
 interface ListItem {
@@ -44,7 +49,7 @@ const listData: ListItem[] = Array.from({ length: total }, (_, index) => ({
 
 先搞十万条数据，测试下要不要换电脑。
 
-#### 第二步：构造 `DOM`
+#### 第二步：构造 DOM
 
 ```html
   <section class="list-card">
@@ -67,7 +72,7 @@ const listData: ListItem[] = Array.from({ length: total }, (_, index) => ({
   </section>
 ```
 
-#### 第三步：编写 `CSS`
+#### 第三步：编写 CSS
 
 ```css
 .list-card {
@@ -164,7 +169,7 @@ const listData: ListItem[] = Array.from({ length: total }, (_, index) => ({
 
 **这就是虚拟滚动最直观的收益：滚动条看起来像完整列表，但 `DOM` 数量少了很多。**
 
-#### 第一步：构造 `DOM`
+### 第一步：构造 DOM
 
 这里 `mock` 数据的写法同上哈。
 
@@ -178,8 +183,7 @@ list-body   真实列表，只渲染当前可视区域附近的数据
 
 对应代码如下：
 
-```vue
-<template>
+```html
   <section class="list-card">
     <header class="list-header">
       <div>
@@ -200,12 +204,11 @@ list-body   真实列表，只渲染当前可视区域附近的数据
       </div>
     </div>
   </section>
-</template>
 ```
 
 这里有两个关键点：
 
-```vue
+```html
 <div class="list-space" :style="{ height: `${fullHeight}px` }"></div>
 ```
 
@@ -213,13 +216,13 @@ list-body   真实列表，只渲染当前可视区域附近的数据
 
 而真正渲染的数据来自：
 
-```vue
+```html
 <li v-for="item in showData" :key="item.id" class="list-item"></li>
 ```
 
 `showData` 只是完整数据中的一小段切片。
 
-#### 第二步：编写 `CSS`
+### 第二步：编写 CSS
 
 ```css
 .list-view {
@@ -275,9 +278,9 @@ const rowHeight = 64
 
 固定高度虚拟列表非常依赖这个值。如果真实行高和 `rowHeight` 不一致，滚动距离越大，位置偏差就会越明显。
 
-#### 第三步：编写 `JS`
+### 第三步：编写 JS
 
-1. 监听滚动位置
+**1. 监听滚动位置**
 
 ```ts
 const scrollTop = ref(0)
@@ -288,7 +291,7 @@ const onScroll = (e: Event) => {
 
 当用户滚动列表时，我们拿到当前滚动距离，然后根据这个值计算应该渲染哪一段数据。
 
-2. 计算完整高度
+**2. 计算完整高度**
 
 ```ts
 const fullHeight = total * rowHeight
@@ -306,7 +309,7 @@ const fullHeight = total * rowHeight
 
 这就是 `list-space` 的作用：它不负责展示内容，只负责制造完整滚动高度。
 
-3. 计算开始索引 `start`
+**3. 计算开始索引 `start`**
 
 ```ts
 const start = computed(() => Math.max(Math.floor(scrollTop.value / rowHeight) - buffer, 0))
@@ -335,7 +338,7 @@ rowHeight = 64
 
 外层的 `Math.max(..., 0)` 是为了防止结果变成负数。因为刚开始滚动距离是 `0`，如果后面减去 `buffer`，可能会得到负数，所以最小值要限制为 `0`。
 
-4. 计算可视数量 `showCount`
+**4. 计算可视数量 `showCount`**
 
 ```ts
 const showCount = computed(() => Math.ceil(viewHeight / rowHeight))
@@ -364,7 +367,7 @@ rowHeight = 64
 showCount = 9
 ```
 
-5. 计算结束索引 `end`
+**5. 计算结束索引 `end`**
 
 ```ts
 const end = computed(() => Math.min(showCount.value + start.value + buffer * 2, total))
@@ -386,7 +389,7 @@ buffer * 2
 
 `Math.min(..., total)` 是为了避免结束索引超过总数据长度。
 
-6. 截取当前要渲染的数据
+**6. 截取当前要渲染的数据**
 
 ```ts
 const showData = computed(() => listData.slice(start.value, end.value))
@@ -411,7 +414,7 @@ end = 25
 
 ## 虚拟滚动注意事项
 
-1. 为什么需要 `moveY`？
+**1. 为什么需要 `moveY`？**
 
 理解虚拟列表时，`moveY` 是最容易卡住的地方。
 
@@ -423,7 +426,7 @@ const moveY = computed(() => start.value * rowHeight)
 
 它对应模板中的：
 
-```vue
+```html
 <ul class="list-body" :style="{ transform: `translateY(${moveY}px)` }"></ul>
 ```
 
@@ -482,7 +485,7 @@ moveY = start * rowHeight
 
 如果没有 `moveY`，滚动过程中会出现内容错位、空白甚至抖动。根本原因不是 `DOM` 更新频繁，而是更新后的 `DOM` 没有站回完整列表中正确的高度位置。
 
-2. `buffer` 的作用？
+**2. `buffer` 的作用？**
 
 `buffer` 是缓冲区。
 
@@ -585,9 +588,9 @@ end = 4 + 9 + 12 = 25
 
 #### 🤔可能存在的疑问？
 
-1. 在普通滚动的代码中 `js` 代码只有 `mock` 数据部分，为什么 `Scripting` 的时间还是比虚拟滚动的长呢？
+**1. 在普通滚动的代码中 `js` 代码只有 `mock` 数据部分，为什么 `Scripting` 的时间还是比虚拟滚动的长呢？**
 
-**回答：**有这样的疑问，大概率是忽略了 `Vue` 模板最终会变成 `JS` 渲染函数，也就是说 `<li v-for="item in listData" :key="item.id">`会变成 ` listData.map(item => createVNode('li', ...))`。这里的创建 100000 个 `vnode`、对 100000 个 `vnode` 做 `patch`、调用 `DOM API` 创建真实节点、设置 `class` / `text` / 属性、插入页面的部分都属于 `Scripting`。
+**回答：** 有这样的疑问，大概率是忽略了 `Vue` 模板最终会变成 `JS` 渲染函数，也就是说 `<li v-for="item in listData" :key="item.id">`会变成 ` listData.map(item => createVNode('li', ...))`。这里的创建 100000 个 `vnode`、对 100000 个 `vnode` 做 `patch`、调用 `DOM API` 创建真实节点、设置 `class` / `text` / 属性、插入页面的部分都属于 `Scripting`。
 
 对比完十万条数据，如果将数据压缩到一万条会怎么样呢？这次同样两者都选择下30多秒的录制。
 
