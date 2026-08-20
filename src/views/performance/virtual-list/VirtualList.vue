@@ -7,7 +7,6 @@
       </div>
       <span>{{ showData.length }} 个节点</span>
     </header>
-
     <div class="list-view" :style="{ height: `${viewHeight}px` }" @scroll="onScroll">
       <div class="list-space" :style="{ height: `${fullHeight}px` }">
         <ul class="list-body" :style="{ transform: `translateY(${moveY}px)` }">
@@ -144,22 +143,5 @@ const onScroll = (e: Event) => {
   justify-self: end;
   color: #0f766e;
   font-style: normal;
-}
-
-@media (max-width: 640px) {
-  .list-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .list-item {
-    grid-template-columns: 66px 1fr;
-    row-gap: 4px;
-  }
-
-  .list-item em {
-    grid-column: 2;
-    justify-self: start;
-  }
 }
 </style>

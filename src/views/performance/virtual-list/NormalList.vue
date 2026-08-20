@@ -7,7 +7,6 @@
       </div>
       <span>{{ listData.length }} 个节点</span>
     </header>
-
     <div class="list-view" :style="{ height: `${viewHeight}px` }">
       <ul class="list-body">
         <li v-for="item in listData" :key="item.id" class="list-item">
@@ -117,22 +116,5 @@ const listData: ListItem[] = Array.from({ length: total }, (_, index) => ({
   justify-self: end;
   color: #0f766e;
   font-style: normal;
-}
-
-@media (max-width: 640px) {
-  .list-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .list-item {
-    grid-template-columns: 66px 1fr;
-    row-gap: 4px;
-  }
-
-  .list-item em {
-    grid-column: 2;
-    justify-self: start;
-  }
 }
 </style>
