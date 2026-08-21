@@ -345,25 +345,49 @@ wheel.rotation.z += 0.12
 
 ## 灯光控制
 
-灯光分成两部分：
+灯光这里只保留最明显的前照灯和尾灯。
 
-第一部分是模型材质自发光：
-
-```ts
-material.emissive.set(featureState.lights ? '#f8fafc' : '#111827')
-material.emissiveIntensity = intensity
-```
-
-第二部分是额外添加的点光源：
+一开始我尝试把日行灯、转向灯、倒车灯、牌照灯都识别出来，但这些灯位在当前模型里不够明显，写太多分支反而会干扰阅读。所以最终保留一个更适合学习的版本：识别主灯，克隆材质，然后通过 `emissiveIntensity` 控制开关。
 
 ```ts
-const frontLeft = new THREE.PointLight('#f8fafc', 0, 3.2)
-const rearLeft = new THREE.PointLight('#ef4444', 0, 2.6)
+const createLightMaterial = (sourceMaterial: THREE.Material, text: string) => {
+  const material = sourceMaterial instanceof THREE.MeshStandardMaterial ? sourceMaterial.clone() : new THREE.MeshStandardMaterial()
+  const isRearLight = includesAny(text, ['tail', 'brake'])
+
+  material.color.set(isRearLight ? '#3f080e' : '#eef6ff')
+  material.emissive.set(isRearLight ? '#ff2638' : '#fff4d6')
+  material.emissiveIntensity = 0.08
+  material.userData.lightOnIntensity = isRearLight ? 1.05 : 2.15
+  material.userData.lightOffIntensity = 0.08
+
+  return material
+}
 ```
 
-只改材质自发光，用户能看到灯罩变亮，但不会真的照亮周围。
+模型遍历时也不用处理所有带 `light` 字样的材质，只保留主灯：
 
-加上点光源后，灯光开关会更有存在感。
+```ts
+const isMainLightMesh = (text: string) => {
+  const ignored = ['day light', 'indicator', 'reverse', 'license', 'brake disc']
+
+  return includesAny(text, ['light', 'headlight', 'taillight', 'brake']) && !includesAny(text, ignored)
+}
+```
+
+开关按钮只改亮度：
+
+```ts
+const updateLights = () => {
+  const intensityKey = featureState.lights ? 'lightOnIntensity' : 'lightOffIntensity'
+
+  lightMaterials.forEach(material => {
+    material.emissiveIntensity = Number(material.userData[intensityKey])
+    material.needsUpdate = true
+  })
+}
+```
+
+这样虽然功能少一点，但代码更清楚：前灯暖白、尾灯红色，关灯时降低自发光强度。
 
 ## 鼠标进入内饰
 

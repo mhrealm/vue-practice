@@ -315,7 +315,6 @@ let animationFrameId = 0
 const transformSnapshots = new Map<THREE.Object3D, TransformSnapshot>()
 const customMaterials = new Set<THREE.Material>()
 const lightMaterials = new Set<THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial>()
-const vehicleLights: THREE.Light[] = []
 const animationClock = new THREE.Clock()
 const animatedActions: Record<AnimatedPartKey, THREE.AnimationAction[]> = {
   doors: [],
@@ -435,15 +434,20 @@ const createRimMaterial = (sourceMaterial: THREE.Material) => {
   return material
 }
 
-const createLightMaterial = (sourceMaterial: THREE.Material) => {
+const createLightMaterial = (sourceMaterial: THREE.Material, text: string) => {
   const material =
     sourceMaterial instanceof THREE.MeshStandardMaterial
       ? sourceMaterial.clone()
       : new THREE.MeshStandardMaterial({ color: '#e5e7eb', roughness: 0.2, metalness: 0 })
+  const isRearLight = includesAny(text, ['tail', 'brake'])
 
-  material.name = 'c8-interactive-light'
-  material.emissive.set('#f8fafc')
-  material.emissiveIntensity = 0.12
+  material.color.set(isRearLight ? '#3f080e' : '#eef6ff')
+  material.emissive.set(isRearLight ? '#ff2638' : '#fff4d6')
+  material.emissiveIntensity = 0.08
+  material.toneMapped = false
+  material.userData.lightOnIntensity = isRearLight ? 1.05 : 2.15
+  material.userData.lightOffIntensity = 0.08
+
   customMaterials.add(material)
   lightMaterials.add(material)
 
@@ -466,7 +470,11 @@ const isRimMesh = (text: string) => {
   return hasRimName && !isRubber
 }
 
-const isLightMesh = (text: string) => includesAny(text, ['light', 'lamp', 'headlight', 'taillight', 'emissive'])
+const isMainLightMesh = (text: string) => {
+  const ignored = ['day light', 'indicator', 'reverse', 'license', 'brake disc']
+
+  return includesAny(text, ['light', 'headlight', 'taillight', 'brake']) && !includesAny(text, ignored)
+}
 
 const isModelBaseMesh = (mesh: THREE.Mesh) => {
   const material = getFirstMaterial(mesh.material)
@@ -672,14 +680,15 @@ const prepareCarModel = (model: THREE.Object3D) => {
       return
     }
 
-    // 特殊材质按优先级处理：灯光、轮毂、车顶、车身。
-    // 这样可以避免一个叫 wheel_paint 的节点被错误当成普通车身。
-    if (isLightMesh(text)) {
-      object.material = createLightMaterial(sourceMaterial)
+    // 这里只保留肉眼最明显的前灯和尾灯，其他不明显的灯位不再增加判断分支。
+    if (isMainLightMesh(text)) {
+      object.material = createLightMaterial(sourceMaterial, text)
       parts.lightMeshes.push(object)
       return
     }
 
+    // 特殊材质按优先级处理：灯光、轮毂、车顶、车身。
+    // 这样可以避免一个叫 wheel_paint 的节点被错误当成普通车身。
     if (isRimMesh(text)) {
       rimMaterial = rimMaterial || createRimMaterial(sourceMaterial)
       object.material = rimMaterial
@@ -719,27 +728,6 @@ const fitModelToStage = (model: THREE.Object3D) => {
   model.position.y -= finalBox.min.y
 }
 
-const createVehicleLights = () => {
-  if (!carGroup) {
-    return
-  }
-
-  const frontLeft = new THREE.PointLight('#f8fafc', 0, 3.2)
-  const frontRight = new THREE.PointLight('#f8fafc', 0, 3.2)
-  const rearLeft = new THREE.PointLight('#ef4444', 0, 2.6)
-  const rearRight = new THREE.PointLight('#ef4444', 0, 2.6)
-
-  // 这里的位置是相对整车 Group 的估算位置。
-  // 如果换成其他模型后车头方向和坐标不一致，只需要微调这几个坐标即可。
-  frontLeft.position.set(-1.05, 0.7, 2.25)
-  frontRight.position.set(1.05, 0.7, 2.25)
-  rearLeft.position.set(-1, 0.68, -2.2)
-  rearRight.position.set(1, 0.68, -2.2)
-
-  vehicleLights.push(frontLeft, frontRight, rearLeft, rearRight)
-  carGroup.add(frontLeft, frontRight, rearLeft, rearRight)
-}
-
 const loadCarModel = async () => {
   try {
     const loader = new GLTFLoader()
@@ -760,7 +748,6 @@ const loadCarModel = async () => {
     carGroup.rotation.y = -0.48
     scene.add(carGroup)
 
-    createVehicleLights()
     updateLights()
   } catch (error) {
     modelNote.value = '模型加载失败，请检查模型文件路径。'
@@ -1014,16 +1001,11 @@ const toggleWheels = () => {
 }
 
 const updateLights = () => {
-  const intensity = featureState.lights ? 2.6 : 0.12
+  const intensityKey = featureState.lights ? 'lightOnIntensity' : 'lightOffIntensity'
 
   lightMaterials.forEach(material => {
-    material.emissive.set(featureState.lights ? '#f8fafc' : '#111827')
-    material.emissiveIntensity = intensity
+    material.emissiveIntensity = Number(material.userData[intensityKey])
     material.needsUpdate = true
-  })
-
-  vehicleLights.forEach((light, index) => {
-    light.intensity = featureState.lights ? (index < 2 ? 4.2 : 2.1) : 0
   })
 }
 
@@ -1178,7 +1160,6 @@ const disposeScene = () => {
   transformSnapshots.clear()
   customMaterials.clear()
   lightMaterials.clear()
-  vehicleLights.length = 0
   clearAllPartCollections()
 }
 
