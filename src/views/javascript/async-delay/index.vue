@@ -34,17 +34,18 @@
     <section class="code-section">
       <h2>典型场景：延迟重试</h2>
       <pre><code>const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+          async function retry(task, times = 3) {
+            for (let i = 0; i < times; i++) {
+              try {
+                return await task()
+              } catch (error) {
+                if (i === times - 1) throw error
+                await sleep(2 ** i * 500)
+              }
+            }
+          }
 
-async function retry(task, times = 3) {
-  for (let i = 0; i < times; i++) {
-    try {
-      return await task()
-    } catch (error) {
-      if (i === times - 1) throw error
-      await sleep(2 ** i * 500)
-    }
-  }
-}</code></pre>
+</code></pre>
     </section>
   </main>
 </template>
