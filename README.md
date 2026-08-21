@@ -185,7 +185,8 @@ const router = createRouter({
 **animation**
 
 - [背景抖动](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/background-shake/index.vue)
-- [3D glTF 汽车产品展示](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/car-showcase/index.vue)
+- [3D glTF 汽车展示基础版](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/car-showcase/basic.vue)
+- [3D glTF 汽车交互展示](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/car-showcase/interactive.vue)
 - [翻页时钟](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/flip-clock/index.vue)
 - [滚动楼层切换](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/floor-change/index.vue)
 - [GSAP ScrollTrigger 基础](https://github.com/mhrealm/vue-practice/blob/master/src/views/animation/gsap-basics/index.vue)

@@ -1,0 +1,419 @@
+# Vue + Three.js 实现 3D 汽车交互展示
+
+## 前言
+
+上一篇基础版已经完成了模型加载、展台、灯光、环境反射和车漆切换。
+
+这一篇进入交互版：让车不只是“摆在那里”，而是可以被用户操作。
+
+对应源码：
+
+```text
+src/views/animation/car-showcase/interactive.vue
+```
+
+目标模型：
+
+[Animated Chevrolet C8 Model - Sketchfab](https://sketchfab.com/3d-models/animated-chevrolet-c8-model-91d39ff24d6c4e7b83674411f9c5bb67)
+
+这个模型本身带有动画片段，页面描述里也提到可以动画控制车门、机盖、尾翼和车轮。相比普通静态车模，它更适合作为 Three.js 交互展示案例。
+
+实际放到项目里的运行时文件是：
+
+```text
+src/views/animation/car-showcase/models/chevrolet-corvette-c8.glb
+```
+
+我解析后看到它包含 `238` 个节点、`72` 个 Mesh、`51` 个材质、`7` 个动画片段。它能明确识别到 `Left Door_122`、`Right Door_104`、`Frunk_69`、`Trunk [or Hood]_140`、`Roof_36`、车轮组和灯光材质。
+
+不过它的动画片段名字比较泛，比如 `Object_239Action`，不能单纯靠动画名字判断“这是左门还是右门”。所以交互版会读取动画目标节点，再沿着父级节点往上找，根据 `Left Door`、`Frunk`、`Trunk` 这些祖先名字完成归类。
+
+## 交互版增加了什么？
+
+交互版主要预留和实现这些功能：
+
+1. 开车门；
+2. 打开前备箱；
+3. 打开后备箱；
+4. 打开尾翼；
+5. 转动车轮；
+6. 灯光控制；
+7. SSAO 环境遮蔽；
+8. 车顶颜色；
+9. 轮毂样式。
+
+这里有一个重点：这些功能不是全部依赖模型本身，也不是所有 GLB 都能完整支持。
+
+像 SSAO 属于渲染能力；车漆、车顶、轮毂属于材质能力；车门、机盖、尾翼、车轮才真正依赖模型节点是否拆分合理。
+
+## 交互模型的关键
+
+普通模型和交互模型最大的区别，不是外观，而是结构。
+
+如果一辆车的车身、车门、机盖全部合并成一个 Mesh，那么你想开车门就很困难。因为车门已经不是一个独立对象了。
+
+适合交互的模型，通常需要满足：
+
+1. 车门是独立节点；
+2. 机盖是独立节点；
+3. 尾翼是独立节点；
+4. 车轮是独立节点；
+5. 每个可开合部件的 pivot 在正确位置。
+
+所谓 pivot，可以理解成物体旋转的轴心。
+
+车门能不能像真实车门一样打开，关键不只是 `rotation.y += 1`，而是车门节点的旋转中心是不是在铰链位置。
+
+## 自动收集部件
+
+交互版没有直接写死某一个节点名，而是先通过关键词收集：
+
+```ts
+parts.doors.push(...collectTopLevelObjects(model, ['door'], ['sill']))
+parts.hood.push(...collectTopLevelObjects(model, ['frunk'], ['badge', 'logo']))
+parts.trunk.push(...collectTopLevelObjects(model, ['trunk', 'boot'], ['badge', 'logo']))
+parts.spoiler.push(...collectTopLevelObjects(model, ['spoiler', 'wing', 'aero']))
+parts.wheels.push(...collectTopLevelObjects(model, ['wheel', 'tire', 'tyre'], ['steering']))
+```
+
+这样写的好处是：不同模型的节点名可能不完全一致。
+
+有的模型叫 `hood`，有的叫 `bonnet`；有的叫 `trunk`，有的叫 `boot`；有的尾翼叫 `spoiler`，有的叫 `wing`。
+
+用关键词收集，可以让代码具备一点兼容性。
+
+C8 里前备箱直接叫 `Frunk`，所以这里优先收集 `frunk`。如果换成其他模型，没有 `frunk` 节点，再退回去找 `hood` 或 `bonnet`。
+
+## 为什么只收顶层对象？
+
+模型结构通常是树形结构：
+
+```text
+door_left
+├─ door_panel
+├─ door_glass
+└─ door_handle
+```
+
+如果我们把 `door_left` 和它下面的 `door_panel`、`door_glass`、`door_handle` 全部收进来，点击开门时就会重复旋转。
+
+所以代码里做了一层判断：
+
+```ts
+if (hasMatchedAncestor(object, root, keywords)) {
+  return
+}
+```
+
+意思是：如果父级已经命中了 `door/hood/spoiler` 这些关键词，就只收父级，不再收子级。
+
+这样动画时只需要操作一个完整部件。
+
+## 保存初始状态
+
+所有可开合部件，都需要先保存初始位置和旋转：
+
+```ts
+const getSnapshot = (object: THREE.Object3D) => {
+  let snapshot = transformSnapshots.get(object)
+
+  if (!snapshot) {
+    snapshot = {
+      position: object.position.clone(),
+      rotation: object.rotation.clone(),
+    }
+    transformSnapshots.set(object, snapshot)
+  }
+
+  return snapshot
+}
+```
+
+为什么要保存？
+
+因为用户点击“打开”后，还要能点击“关闭”。
+
+关闭不是随便设置成 `0`，而是回到模型原本的 `position` 和 `rotation`。很多模型初始状态并不是完全 0，所以保存初始状态更稳。
+
+## 优先使用 GLB 自带动画
+
+C8 的动画片段已经存在于 GLB 里，所以开车门、前备箱和后备箱会优先使用 `AnimationMixer` 播放模型自带动画。
+
+```ts
+animationMixer = new THREE.AnimationMixer(model)
+
+const action = animationMixer.clipAction(clip)
+action.setLoop(THREE.LoopOnce, 1)
+action.clampWhenFinished = true
+```
+
+`AnimationMixer` 可以理解成 Three.js 里的动画播放器。`clipAction` 会把某一段 `AnimationClip` 变成可播放的动作。
+
+模型自带动画的好处是：它已经包含了作者调好的旋转轴、位移和姿态。对于 C8 这种剪刀门，如果我们自己猜 `rotation.x` 或 `rotation.y`，很容易开得不自然。
+
+## 动画归类
+
+C8 的动画名是 `Object_239Action` 这种形式，名字本身看不出含义。
+
+所以代码会先读取动画目标节点，再往父级找：
+
+```ts
+const getAnimationTargetText = (clip: THREE.AnimationClip, root: THREE.Object3D) => {
+  const texts = new Set<string>()
+
+  clip.tracks.forEach(track => {
+    const targetName = getTrackTargetName(track.name)
+    let current = targetName ? root.getObjectByName(targetName) : null
+
+    while (current) {
+      texts.add(getObjectText(current))
+
+      if (current === root) {
+        break
+      }
+
+      current = current.parent
+    }
+  })
+
+  return Array.from(texts).join(' ')
+}
+```
+
+比如某段动画目标叫 `Object_239`，但它的父级链路里能找到 `Left Door_122`，那它就可以归类到车门动画里。
+
+归类后的播放逻辑是：
+
+```ts
+const playAnimatedActions = (key: AnimatedPartKey, open: boolean) => {
+  const actions = animatedActions[key]
+
+  actions.forEach(action => {
+    const duration = action.getClip().duration
+
+    action.paused = true
+    action.play()
+
+    gsap.to(action, {
+      time: open ? 0 : duration,
+      duration: 0.75,
+      ease: 'power2.out',
+      onUpdate: () => animationMixer?.update(0),
+    })
+  })
+}
+```
+
+C8 这份模型比较特别：动画第 `0` 帧是打开态，末帧是闭合态。所以按钮逻辑需要反过来：打开时从末帧倒播到第 `0` 帧；关闭时再从第 `0` 帧正播回末帧。
+
+## 使用 GSAP 兜底
+
+不是所有模型都有动画片段。如果某个部件没有匹配到 GLB 动画，交互版仍然会用 GSAP 补间部件的 `rotation` 和 `position`：
+
+```ts
+gsap.to(object.rotation, {
+  ...targetRotation,
+  duration: 0.7,
+  ease: 'power2.out',
+})
+```
+
+Three.js 的 `Object3D` 本身就有 `position`、`rotation`、`scale`。GSAP 可以直接补间这些普通对象属性，所以写法很直接。
+
+## 开车门
+
+车门左右两侧打开方向不同，所以先判断部件在左边还是右边：
+
+```ts
+const side = getObjectSide(part)
+animatePart(part, featureState.doors, {
+  y: side === 'left' ? -0.92 : 0.92,
+})
+```
+
+这段代码只会在没有匹配到车门动画时执行。
+
+C8 本身带有车门动画，所以实际点击“车门”按钮时，优先播放模型里的 `Left Door` 和 `Right Door` 动画。这样剪刀门的展开姿态会更自然。
+
+这也是做 3D 交互时很常见的一点：代码逻辑可以通用，但具体角度和轴向要结合模型实际结构调整。
+
+## 打开前备箱和后备箱
+
+前备箱：
+
+```ts
+parts.hood.forEach(part => {
+  animatePart(part, featureState.hood, { x: -0.72 })
+})
+```
+
+后备箱：
+
+```ts
+parts.trunk.forEach(part => {
+  animatePart(part, featureState.trunk, { x: 0.72 })
+})
+```
+
+C8 的前备箱对应 `Frunk`，后部对应 `Trunk [or Hood]`。如果这两个部件能找到自带动画，就直接播放动画；否则才退回到上面的 GSAP 旋转逻辑。
+
+## 打开尾翼
+
+尾翼通常不是简单旋转，还可能有一点升起：
+
+```ts
+parts.spoiler.forEach(part => {
+  animatePart(part, featureState.spoiler, { x: -0.16 }, { y: 0.32, z: -0.08 })
+})
+```
+
+这里同时控制了：
+
+1. `rotation.x`：尾翼轻微改变角度；
+2. `position.y`：尾翼向上升起；
+3. `position.z`：尾翼略微后移。
+
+这类动画不一定完全真实，但能模拟“主动尾翼展开”的感觉。
+
+## 车轮旋转
+
+车轮旋转放在渲染循环里：
+
+```ts
+const spinWheels = () => {
+  if (!featureState.wheels) {
+    return
+  }
+
+  parts.wheels.forEach(wheel => {
+    wheel.rotation.x += 0.12
+  })
+}
+```
+
+这里先按 `x` 轴旋转处理。
+
+如果实际模型的车轮轴不是 x 轴，只需要改成：
+
+```ts
+wheel.rotation.z += 0.12
+```
+
+或者其他轴即可。
+
+## 灯光控制
+
+灯光分成两部分：
+
+第一部分是模型材质自发光：
+
+```ts
+material.emissive.set(featureState.lights ? '#f8fafc' : '#111827')
+material.emissiveIntensity = intensity
+```
+
+第二部分是额外添加的点光源：
+
+```ts
+const frontLeft = new THREE.PointLight('#f8fafc', 0, 3.2)
+const rearLeft = new THREE.PointLight('#ef4444', 0, 2.6)
+```
+
+只改材质自发光，用户能看到灯罩变亮，但不会真的照亮周围。
+
+加上点光源后，灯光开关会更有存在感。
+
+## SSAO 环境遮蔽
+
+SSAO 是屏幕空间环境遮蔽。
+
+简单理解：它会让物体接触处、缝隙处、轮胎靠近地面的地方变暗一点。
+
+交互版使用 Three.js 自带的 `SSAOPass`：
+
+```ts
+composer = new EffectComposer(renderer)
+composer.addPass(new RenderPass(scene, camera))
+
+ssaoPass = new SSAOPass(scene, camera, width, height, 32)
+ssaoPass.kernelRadius = 13
+ssaoPass.minDistance = 0.004
+ssaoPass.maxDistance = 0.14
+composer.addPass(ssaoPass)
+composer.addPass(new OutputPass())
+```
+
+开启 SSAO 后，车和地面的接触关系会更明显，画面不容易飘。
+
+但它也会增加渲染成本，移动端需要谨慎。
+
+## 车顶颜色
+
+车顶颜色依赖模型是否有独立的 roof/top 节点或材质：
+
+```ts
+const isRoofMesh = (text: string) => includesAny(text, ['roof', 'top'])
+```
+
+如果模型没有把车顶拆出来，这个功能就不能独立生效。
+
+这也是为什么交互版按钮上会显示识别数量。数量为 0，就说明当前模型里没有找到对应部件。
+
+## 轮毂样式
+
+当前代码里的轮毂样式是材质样式，不是几何形状替换：
+
+```ts
+rimMaterial.color.set(rim.color)
+rimMaterial.metalness = rim.metalness
+rimMaterial.roughness = rim.roughness
+```
+
+也就是说，它能切换石墨、银色、青铜这类轮毂质感。
+
+如果要真正切换不同造型的轮毂，就需要模型里提供多个轮毂 Mesh，或者额外加载多个轮毂模型，再根据用户选择显示/隐藏。
+
+## 交互版的真实难点
+
+这类交互案例最难的不是 Three.js API，而是模型结构。
+
+如果模型节点拆得好，代码可以很简单。
+
+如果模型节点全部合并，代码再复杂也很难做出自然开合。
+
+所以拿到模型后，第一步应该打印节点树：
+
+```ts
+model.traverse(object => {
+  console.log(object.name)
+})
+```
+
+然后确认：
+
+1. 车门节点叫什么；
+2. 机盖节点叫什么；
+3. 尾翼节点叫什么；
+4. 车轮节点叫什么；
+5. 灯光材质叫什么；
+6. 车顶和轮毂是否单独拆分。
+
+当前代码已经做了关键词兜底，后续如果要更稳定，建议根据真实节点名把匹配条件改成精确配置。
+
+## 放在最后的话
+
+基础版解决的是“模型能不能展示”。
+
+交互版解决的是“模型能不能被操作”。
+
+这两件事看起来只差几个按钮，但背后的思路完全不一样。
+
+展示版关注场景、灯光、材质、相机和资源清理。
+
+交互版关注节点结构、pivot、状态保存、动画补间和部件匹配。
+
+AI 可以生成按钮，也可以生成 `gsap.to`，但它不会替你确认模型的 pivot 是否正确，也不会替你判断哪个节点才是真正的车门。
+
+这就是为什么我们需要看懂 AI 代码，也需要看懂模型结构。
+
+能看懂，才知道问题出在代码，还是出在模型。
