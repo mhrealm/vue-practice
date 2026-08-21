@@ -238,15 +238,15 @@ type AnimatedPartKey = 'doors' | 'hood' | 'trunk'
 const corvetteModelUrl = new URL('./models/chevrolet-corvette-c8.glb', import.meta.url).href
 
 const sceneHostRef = ref<HTMLDivElement | null>(null)
-const activePaint = ref('ceramic-white')
+const activePaint = ref('corvette-red')
 const activeRoof = ref('carbon-roof')
 const activeRim = ref('graphite')
 const modelNote = ref('')
 const modelKicker = 'Animated Sports Car Configurator'
 
 const paintOptions: CarPaintOption[] = [
-  { name: 'ceramic-white', label: 'Ceramic White', color: '#98a3ad', metalness: 0.05, roughness: 0.43, clearcoatRoughness: 0.09, reflectivity: 0.28, envMapIntensity: 0.58, pearl: 0.02 },
   { name: 'corvette-red', label: 'Corvette Red', color: '#8f1418', metalness: 0.16, roughness: 0.22, clearcoatRoughness: 0.03, reflectivity: 0.68, envMapIntensity: 1.36, pearl: 0.04 },
+  { name: 'ceramic-white', label: 'Ceramic White', color: '#98a3ad', metalness: 0.05, roughness: 0.43, clearcoatRoughness: 0.09, reflectivity: 0.28, envMapIntensity: 0.58, pearl: 0.02 },
   { name: 'blade-silver', label: 'Blade Silver', color: '#b5bec7', metalness: 0.28, roughness: 0.2, clearcoatRoughness: 0.028, reflectivity: 0.7, envMapIntensity: 1.42, pearl: 0.1 },
   { name: 'night-black', label: 'Night Black', color: '#05070a', metalness: 0.14, roughness: 0.18, clearcoatRoughness: 0.026, reflectivity: 0.74, envMapIntensity: 1.58, pearl: 0.02 },
 ]
@@ -766,27 +766,22 @@ const loadCarModel = async () => {
 }
 
 const createStage = () => {
-  const grid = new THREE.GridHelper(18, 36, '#475569', '#1f2937')
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(3.52, 0.018, 12, 128),
-    new THREE.MeshStandardMaterial({
-      color: '#f8fafc',
-      emissive: '#64748b',
-      emissiveIntensity: 0.12,
-    }),
-  )
+  // GridHelper 只是一组线条，不是实心地板。
+  // 保留它可以让用户感知空间方向，同时不会像地板一样盖住或压暗车底。
+  // 进阶版开启了 EffectComposer 和 SSAO，后处理会让线条观感比基础版更暗。
+  // 这里把网格颜色单独提亮一点，让最终画面接近基础版的网格亮度。
+  const grid = new THREE.GridHelper(18, 36, '#64748b', '#334155')
 
-  // 只保留网格和光圈作为空间参照，不再创建实心地板。
+  // 稍微抬高一点，避免和模型底部同在 y=0 时出现闪烁。
+  // 这里不再创建白色外圈光环，让进阶版网格和基础版保持一致。
   grid.position.y = 0.018
-  ring.rotation.x = -Math.PI / 2
-  ring.position.y = 0.03
 
-  scene?.add(grid, ring)
+  scene?.add(grid)
 }
 
 const createStudioLights = () => {
-  const frontSoftbox = new THREE.RectAreaLight('#ffffff', 2.3, 4.8, 1.5)
-  const sideSoftbox = new THREE.RectAreaLight('#dbeafe', 1.4, 3.9, 1.4)
+  const frontSoftbox = new THREE.RectAreaLight('#ffffff', 0.95, 4.8, 1.5)
+  const sideSoftbox = new THREE.RectAreaLight('#dbeafe', 0.45, 3.9, 1.4)
 
   // 两盏摄影棚柔光不会显示成物体，只负责给清漆层更自然的长条高光。
   frontSoftbox.position.set(-2.5, 3.3, 4.5)
@@ -826,18 +821,18 @@ const initScene = () => {
   const { width, height } = getHostSize()
 
   scene = new THREE.Scene()
-  scene.background = new THREE.Color('#080b10')
-  scene.fog = new THREE.Fog('#080b10', 10, 25)
+  scene.background = new THREE.Color('#090d12')
+  scene.fog = new THREE.Fog('#090d12', 10, 24)
 
   camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100)
-  camera.position.set(5.8, 2.7, 5.4)
+  camera.position.set(2.15, 0.55, 4.85)
 
   renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(width, height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 0.88
+  renderer.toneMappingExposure = 0.7
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = THREE.PCFSoftShadowMap
   host.appendChild(renderer.domElement)
@@ -856,10 +851,10 @@ const initScene = () => {
   controls.maxPolarAngle = Math.PI / 2.05
   controls.target.set(0, 0.86, 0)
 
-  const keyLight = new THREE.DirectionalLight('#ffffff', 2.9)
-  const fillLight = new THREE.DirectionalLight('#f8fafc', 0.85)
-  const rimLight = new THREE.PointLight('#ffffff', 34, 12)
-  const ambientLight = new THREE.HemisphereLight('#f8fafc', '#020617', 1)
+  const keyLight = new THREE.DirectionalLight('#ffffff', 1.45)
+  const fillLight = new THREE.DirectionalLight('#f8fafc', 0.28)
+  const rimLight = new THREE.PointLight('#ffffff', 14, 12)
+  const ambientLight = new THREE.HemisphereLight('#f8fafc', '#020617', 0.5)
 
   keyLight.position.set(4.4, 7.2, 5.2)
   keyLight.castShadow = true

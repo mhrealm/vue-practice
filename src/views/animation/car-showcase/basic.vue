@@ -66,9 +66,16 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
 
 interface PaintOption {
+  // 程序内部使用的唯一标识，点击色卡时会用它判断当前选中项。
   name: string
+
+  // 给无障碍属性 aria-label 使用，方便读屏软件读出色卡名称。
   label: string
+
+  // 色卡显示颜色，也是车身材质的基础色。
   color: string
+
+  // 下面这些参数都会写入 MeshPhysicalMaterial，用来控制车漆质感。
   metalness: number
   roughness: number
   clearcoatRoughness: number
@@ -80,17 +87,19 @@ interface PaintOption {
 // 模型和当前案例放在一起，方便迁移、删除和写博客时统一管理。
 const corvetteModelUrl = new URL('./models/chevrolet-corvette-c8.glb', import.meta.url).href
 const sceneHostRef = ref<HTMLDivElement | null>(null)
-const activePaint = ref('ceramic-white')
+
+// 默认选中红色，让第一个色卡和页面初始车漆保持一致。
+const activePaint = ref('corvette-red')
 const modelNote = ref('')
 const modelKicker = 'Animated Sports Car Showcase'
 
 // 车漆色值尽量避免纯色过饱和。
 // PBR 材质里颜色太亮、太纯时，车身很容易变成“塑料玩具感”。
 const paintOptions: PaintOption[] = [
-  { name: 'ceramic-white', label: 'Ceramic White', color: '#98a3ad', metalness: 0.05, roughness: 0.43, clearcoatRoughness: 0.09, reflectivity: 0.28, envMapIntensity: 0.58, pearl: 0.02 },
   { name: 'corvette-red', label: 'Corvette Red', color: '#8f1418', metalness: 0.16, roughness: 0.22, clearcoatRoughness: 0.03, reflectivity: 0.68, envMapIntensity: 1.36, pearl: 0.04 },
+  { name: 'ceramic-white', label: 'Ceramic White', color: '#98a3ad', metalness: 0.05, roughness: 0.43, clearcoatRoughness: 0.09, reflectivity: 0.28, envMapIntensity: 0.58, pearl: 0.02 },
   { name: 'blade-silver', label: 'Blade Silver', color: '#b5bec7', metalness: 0.28, roughness: 0.2, clearcoatRoughness: 0.028, reflectivity: 0.7, envMapIntensity: 1.42, pearl: 0.1 },
-  { name: 'carbon-black', label: 'Carbon Black', color: '#05070a', metalness: 0.14, roughness: 0.18, clearcoatRoughness: 0.026, reflectivity: 0.74, envMapIntensity: 1.58, pearl: 0.02 },
+  { name: 'night-black', label: 'Night Black', color: '#05070a', metalness: 0.14, roughness: 0.18, clearcoatRoughness: 0.026, reflectivity: 0.74, envMapIntensity: 1.58, pearl: 0.02 },
 ]
 
 let scene: THREE.Scene | null = null
@@ -128,7 +137,11 @@ const applyCarPaintToMaterial = (material: THREE.MeshPhysicalMaterial, paint: Pa
   // 真实车漆不是一整块金属，而是底色 + 透明清漆层。
   // metalness 保持偏低，主要靠 clearcoat、reflectivity 和环境反射做出漆面高光。
   material.color.set(paint.color)
+
+  // metalness 越高越像金属，汽车漆通常只保留一点点金属质感。
   material.metalness = paint.metalness
+
+  // roughness 越低，高光越锐利；越高，反射越柔和。
   material.roughness = paint.roughness
   material.clearcoat = 1
   material.clearcoatRoughness = paint.clearcoatRoughness
@@ -136,7 +149,11 @@ const applyCarPaintToMaterial = (material: THREE.MeshPhysicalMaterial, paint: Pa
   material.ior = 1.55
   material.specularIntensity = 1
   material.specularColor.set('#ffffff')
+
+  // 环境反射强度会明显影响车漆是否有“摄影棚高光”。
   material.envMapIntensity = paint.envMapIntensity
+
+  // 少量 iridescence 模拟珠光层，数值太高会变成夸张的变色漆。
   material.iridescence = paint.pearl
   material.iridescenceIOR = 1.32
   material.iridescenceThicknessRange = [120, 360]
@@ -283,27 +300,20 @@ const loadCarModel = async () => {
 }
 
 const createStage = () => {
-  const grid = new THREE.GridHelper(18, 36, '#445267', '#1b2532')
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(3.45, 0.018, 12, 128),
-    new THREE.MeshStandardMaterial({
-      color: '#f8fafc',
-      emissive: '#94a3b8',
-      emissiveIntensity: 0.14,
-    }),
-  )
+  // GridHelper 只是一组线条，不是实心地板。
+  // 保留它可以让用户感知空间方向，同时不会像地板一样盖住或压暗车底。
+  const grid = new THREE.GridHelper(18, 36, '#475569', '#1f2937')
 
-  // 只保留网格和光圈作为空间参照，不再创建实心地板。
-  grid.position.y = 0.012
-  ring.rotation.x = -Math.PI / 2
-  ring.position.y = 0.025
+  // 稍微抬高一点，避免和模型底部同在 y=0 时出现闪烁。
+  // 这里不再创建白色外圈光环，让基础版画面和交互版保持一致。
+  grid.position.y = 0.018
 
-  scene?.add(grid, ring)
+  scene?.add(grid)
 }
 
 const createStudioLights = () => {
-  const frontSoftbox = new THREE.RectAreaLight('#ffffff', 2.2, 4.6, 1.5)
-  const sideSoftbox = new THREE.RectAreaLight('#dbeafe', 1.35, 3.8, 1.4)
+  const frontSoftbox = new THREE.RectAreaLight('#ffffff', 0.95, 4.6, 1.5)
+  const sideSoftbox = new THREE.RectAreaLight('#dbeafe', 0.45, 3.8, 1.4)
 
   // 两盏摄影棚柔光不会显示成物体，只负责给清漆层更自然的长条高光。
   frontSoftbox.position.set(-2.4, 3.2, 4.4)
@@ -327,15 +337,18 @@ const initScene = () => {
   scene.background = new THREE.Color('#090d12')
   scene.fog = new THREE.Fog('#090d12', 10, 24)
 
+  // PerspectiveCamera 的四个参数分别是：视角、宽高比、最近可见距离、最远可见距离。
+  // position.set(x, y, z) 表示把相机放到车的右前上方。
+  // 数值比旧版更靠近模型，所以页面初始看到的汽车会更大一些。
   camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100)
-  camera.position.set(5.9, 2.65, 5.35)
+  camera.position.set(5.15, 2.55, 4.85)
 
   renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(width, height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 0.88
+  renderer.toneMappingExposure = 0.7
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = THREE.PCFSoftShadowMap
   host.appendChild(renderer.domElement)
@@ -355,10 +368,12 @@ const initScene = () => {
   controls.maxPolarAngle = Math.PI / 2.05
   controls.target.set(0, 0.82, 0)
 
-  const keyLight = new THREE.DirectionalLight('#ffffff', 2.7)
-  const fillLight = new THREE.DirectionalLight('#f8fafc', 0.75)
-  const rimLight = new THREE.PointLight('#ffffff', 32, 12)
-  const ambientLight = new THREE.HemisphereLight('#f8fafc', '#020617', 1)
+  // 主光负责车身亮面，补光负责暗部层次，轮廓光负责把车从背景里分离出来。
+  // 这里的强度保持克制，避免红色车漆和白色高光过曝。
+  const keyLight = new THREE.DirectionalLight('#ffffff', 1.45)
+  const fillLight = new THREE.DirectionalLight('#f8fafc', 0.28)
+  const rimLight = new THREE.PointLight('#ffffff', 14, 12)
+  const ambientLight = new THREE.HemisphereLight('#f8fafc', '#020617', 0.5)
 
   keyLight.position.set(4.2, 7.4, 5.4)
   keyLight.castShadow = true

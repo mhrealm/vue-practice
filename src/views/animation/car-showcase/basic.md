@@ -6,7 +6,7 @@
 
 这个系列我拆成两个版本：
 
-1. 基础版：加载模型、搭建展台、自动旋转、切换车漆；
+1. 基础版：加载模型、搭建展台、自动旋转、默认红色车漆和色卡切换；
 2. 交互版：开车门、开前备箱、开尾翼、车轮旋转、灯光控制、SSAO、车顶颜色、轮毂样式。
 
 这篇先讲基础版。
@@ -37,8 +37,9 @@ src/views/animation/car-showcase/models/chevrolet-corvette-c8.glb
 2. 加载 `.glb` 车模；
 3. 让模型自动适配展台；
 4. 添加灯光和环境反射；
-5. 通过色卡切换车漆颜色；
-6. 页面卸载时清理 WebGL 资源。
+5. 只保留网格参考线，不创建实心地板和外圈光环；
+6. 默认显示红色车漆，并通过色卡切换车漆参数；
+7. 页面卸载时清理 WebGL 资源。
 
 初学 Three.js 的时候，先把这条主线跑通非常重要。因为后面的所有交互，其实都是建立在“模型已经被正确加载并组织好”这个基础上的。
 
@@ -56,7 +57,7 @@ DOM 结构非常简单：
     </section>
 
     <section class="paint-panel">
-      <!-- 车漆色卡 -->
+      <!-- 车漆色卡，默认第一个红色处于选中状态 -->
     </section>
   </main>
 </template>
@@ -113,7 +114,7 @@ const loadCarModel = async () => {
 
 现在代码直接加载 C8。因为模型已经进入案例目录，继续保留备用模型反而会让主线变复杂。
 
-这里的兜底不是为了偷懒，而是为了让案例在模型缺失时也能继续调试场景、灯光、材质和布局。等真实模型放进去后，逻辑不需要改。
+如果模型加载失败，代码会把提示写入 `modelNote`，页面上会出现错误信息。基础版这里不做备用模型，目的是让教程主线更干净：先把真实 GLB 模型加载、适配、换色这几件事讲清楚。
 
 ## 创建场景
 
@@ -144,7 +145,7 @@ host.appendChild(renderer.domElement)
 ```ts
 renderer.outputColorSpace = THREE.SRGBColorSpace
 renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1.03
+renderer.toneMappingExposure = 0.7
 ```
 
 `outputColorSpace` 会影响颜色在浏览器里的显示。如果不处理，模型颜色可能偏灰或者不准。
@@ -169,6 +170,37 @@ pmremGenerator.dispose()
 `scene.environment` 可以理解成“周围环境的反光来源”。
 
 车漆、玻璃、金属这些材质都会从环境贴图里拿到反射信息。如果没有它，车身会显得很平，像普通彩色模型。
+
+## 展台和初始镜头
+
+基础版现在只保留网格参考线：
+
+```ts
+const grid = new THREE.GridHelper(18, 36, '#475569', '#1f2937')
+grid.position.y = 0.018
+scene?.add(grid)
+```
+
+`GridHelper` 画出来的是线条，不是实心地板。这样既能保留空间方向，又不会出现车底下面一整块黑色平面。
+
+之前外面有一个白色光圈，本质上是用 `TorusGeometry` 画出来的圆环：
+
+```ts
+new THREE.TorusGeometry(3.45, 0.018, 12, 128)
+```
+
+这个圆环视觉存在感比较强，会抢走车本身的注意力，所以现在基础版和交互版都删除了它，只保留网格。
+
+初始镜头也稍微靠近了一点：
+
+```ts
+camera.position.set(5.15, 2.55, 4.85)
+controls.target.set(0, 0.82, 0)
+```
+
+`camera.position.set(x, y, z)` 可以理解成把相机放到 3D 空间里的某个位置。
+
+当前这组值表示：相机在车的右前上方，看向车身中心附近。相比更远的镜头，汽车初始状态会更大一些，更像产品展示页。
 
 ## 模型适配展台
 
@@ -219,18 +251,17 @@ new THREE.MeshPhysicalMaterial({
 
 ```ts
 const material = new THREE.MeshPhysicalMaterial({
-  color,
+  color: paint.color,
   map: source?.map || null,
   metalnessMap: source?.metalnessMap || null,
   roughnessMap: source?.roughnessMap || null,
   normalMap: source?.normalMap || null,
   aoMap: source?.aoMap || null,
-  metalness: 0.48,
-  roughness: 0.3,
-  clearcoat: 1,
-  clearcoatRoughness: 0.07,
-  envMapIntensity: 1.35,
+  transparent: false,
+  opacity: 1,
 })
+
+applyCarPaintToMaterial(material, paint)
 ```
 
 这里几个参数可以简单理解为：
@@ -242,6 +273,21 @@ const material = new THREE.MeshPhysicalMaterial({
 5. `envMapIntensity`：环境反射强度。
 
 汽车漆面不是纯金属，也不是纯塑料，而是底色上覆盖一层清漆。所以 `clearcoat` 对车漆质感很重要。
+
+车漆的具体参数放在 `paintOptions` 里：
+
+```ts
+const activePaint = ref('corvette-red')
+
+const paintOptions: PaintOption[] = [
+  { name: 'corvette-red', label: 'Corvette Red', color: '#8f1418', metalness: 0.16, roughness: 0.22 },
+  { name: 'ceramic-white', label: 'Ceramic White', color: '#98a3ad', metalness: 0.05, roughness: 0.43 },
+  { name: 'blade-silver', label: 'Blade Silver', color: '#b5bec7', metalness: 0.28, roughness: 0.2 },
+  { name: 'night-black', label: 'Night Black', color: '#05070a', metalness: 0.14, roughness: 0.18 },
+]
+```
+
+这里故意把红色放在第一个，同时让 `activePaint` 默认等于 `corvette-red`。这样页面打开时，默认车漆和第一个色卡是对应的。
 
 ## 如何识别车身？
 
@@ -264,15 +310,32 @@ const text = `${mesh.name} ${material?.name || ''}`.toLowerCase()
 
 ## 切换车漆
 
-色卡点击后只做一件事：
+色卡点击后不重新加载模型，只更新当前共用的车身材质：
 
 ```ts
-bodyMaterial?.color.set(paint.color)
+const applyPaint = (paint: PaintOption) => {
+  activePaint.value = paint.name
+
+  if (bodyMaterial) {
+    applyCarPaintToMaterial(bodyMaterial, paint)
+  }
+}
 ```
 
 这里没有重新加载模型，也没有重新创建材质。
 
-因为所有车身 Mesh 都共用同一个 `bodyMaterial`，所以只要改这一份材质颜色，整辆车的车身都会同步变化。
+因为所有车身 Mesh 都共用同一个 `bodyMaterial`，所以只要改这一份材质，整辆车的车身都会同步变化。
+
+注意这里更新的不只是 `color`，还会同步更新：
+
+1. `metalness`；
+2. `roughness`；
+3. `clearcoatRoughness`；
+4. `reflectivity`；
+5. `envMapIntensity`；
+6. `iridescence`。
+
+这样不同颜色可以有不同质感。比如红色更亮、更有清漆反射；白色则更克制，避免看起来过曝。
 
 ## 渲染循环
 

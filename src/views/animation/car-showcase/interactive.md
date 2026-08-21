@@ -46,6 +46,45 @@ src/views/animation/car-showcase/models/chevrolet-corvette-c8.glb
 
 像 SSAO 属于渲染能力；车漆、车顶、轮毂属于材质能力；车门、机盖、尾翼、车轮才真正依赖模型节点是否拆分合理。
 
+## 当前视觉基准
+
+交互版和基础版现在保持同一套初始视觉：
+
+1. 默认车漆是红色；
+2. 红色色卡排在第一个；
+3. 删除外面的白色光圈；
+4. 不创建实心地板，只保留网格参考线；
+5. 背景色和雾化参数与基础版保持一致，网格颜色略微提亮，用来抵消 SSAO 后处理带来的压暗；
+6. 初始镜头更靠近汽车；
+7. 整体灯光和曝光更克制，避免红色车漆高光过曝。
+
+车漆默认值是：
+
+```ts
+const activePaint = ref('corvette-red')
+```
+
+色卡顺序从红色开始：
+
+```ts
+const paintOptions: CarPaintOption[] = [
+  { name: 'corvette-red', label: 'Corvette Red', color: '#8f1418' },
+  { name: 'ceramic-white', label: 'Ceramic White', color: '#98a3ad' },
+  { name: 'blade-silver', label: 'Blade Silver', color: '#b5bec7' },
+  { name: 'night-black', label: 'Night Black', color: '#05070a' },
+]
+```
+
+展台只保留网格。因为交互版默认开启了 `SSAO`，同一组网格颜色经过后处理后会比基础版更暗，所以这里把网格颜色稍微提亮：
+
+```ts
+const grid = new THREE.GridHelper(18, 36, '#64748b', '#334155')
+grid.position.y = 0.018
+scene?.add(grid)
+```
+
+这里没有地板，也没有 `TorusGeometry` 画出来的白色外圈。这样画面注意力会更集中在汽车本身，基础版和交互版的第一眼观感也更统一。
+
 ## 交互模型的关键
 
 普通模型和交互模型最大的区别，不是外观，而是结构。
@@ -343,7 +382,7 @@ composer.addPass(ssaoPass)
 composer.addPass(new OutputPass())
 ```
 
-开启 SSAO 后，车和地面的接触关系会更明显，画面不容易飘。
+开启 SSAO 后，车轮、车身缝隙、底部接近网格的位置会更有暗部层次，画面不容易飘。
 
 但它也会增加渲染成本，移动端需要谨慎。
 
