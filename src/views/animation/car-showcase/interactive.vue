@@ -244,6 +244,9 @@ const activeRim = ref('graphite')
 const modelNote = ref('')
 const modelKicker = 'Animated Sports Car Configurator'
 
+const initialCameraPosition = new THREE.Vector3(2.15, 0.55, 4.85)
+const cockpitTargetPosition = new THREE.Vector3(-0.08, 0.76, 0.22)
+
 const paintOptions: CarPaintOption[] = [
   { name: 'corvette-red', label: 'Corvette Red', color: '#8f1418', metalness: 0.16, roughness: 0.22, clearcoatRoughness: 0.03, reflectivity: 0.68, envMapIntensity: 1.36, pearl: 0.04 },
   { name: 'ceramic-white', label: 'Ceramic White', color: '#98a3ad', metalness: 0.05, roughness: 0.43, clearcoatRoughness: 0.09, reflectivity: 0.28, envMapIntensity: 0.58, pearl: 0.02 },
@@ -824,8 +827,9 @@ const initScene = () => {
   scene.background = new THREE.Color('#090d12')
   scene.fog = new THREE.Fog('#090d12', 10, 24)
 
-  camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100)
-  camera.position.set(2.15, 0.55, 4.85)
+  // near 调小后，镜头贴近车窗或进入车内时，内饰不容易被相机近裁剪面切掉。
+  camera = new THREE.PerspectiveCamera(42, width / height, 0.03, 100)
+  camera.position.copy(initialCameraPosition)
 
   renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(width, height)
@@ -845,11 +849,16 @@ const initScene = () => {
 
   controls = new OrbitControls(camera, renderer.domElement)
   controls.enableDamping = true
-  controls.enablePan = false
-  controls.minDistance = 4
+  // 允许平移和更近的缩放距离，鼠标滚轮可以直接推进到座舱内。
+  controls.enablePan = true
+  controls.screenSpacePanning = true
+  controls.panSpeed = 0.42
+  controls.zoomSpeed = 0.82
+  controls.minDistance = 0.18
   controls.maxDistance = 9
-  controls.maxPolarAngle = Math.PI / 2.05
-  controls.target.set(0, 0.86, 0)
+  controls.minPolarAngle = 0.05
+  controls.maxPolarAngle = Math.PI - 0.05
+  controls.target.copy(cockpitTargetPosition)
 
   const keyLight = new THREE.DirectionalLight('#ffffff', 1.45)
   const fillLight = new THREE.DirectionalLight('#f8fafc', 0.28)

@@ -39,12 +39,15 @@ src/views/animation/car-showcase/models/chevrolet-corvette-c8.glb
 5. 转动车轮；
 6. 灯光控制；
 7. SSAO 环境遮蔽；
-8. 车顶颜色；
-9. 轮毂样式。
+8. 鼠标自由进入内饰视角；
+9. 车顶颜色；
+10. 轮毂样式。
 
 这里有一个重点：这些功能不是全部依赖模型本身，也不是所有 GLB 都能完整支持。
 
 像 SSAO 属于渲染能力；车漆、车顶、轮毂属于材质能力；车门、机盖、尾翼、车轮才真正依赖模型节点是否拆分合理。
+
+进入内饰视角本质上是相机控制能力。它不要求模型提供动画片段，但要求模型内部确实有座舱、方向盘、座椅、中控这些细节。C8 这份模型包含 `Interior`、`Steering Wheel`、车窗等节点，所以可以通过鼠标滚轮推进到座舱内部，再拖拽旋转查看内饰。
 
 ## 当前视觉基准
 
@@ -361,6 +364,39 @@ const rearLeft = new THREE.PointLight('#ef4444', 0, 2.6)
 只改材质自发光，用户能看到灯罩变亮，但不会真的照亮周围。
 
 加上点光源后，灯光开关会更有存在感。
+
+## 鼠标进入内饰
+
+进入内饰不是额外做一个按钮跳转，而是调整 `OrbitControls` 的控制范围，让用户可以通过鼠标自由进入：
+
+```ts
+const initialCameraPosition = new THREE.Vector3(2.15, 0.55, 4.85)
+const cockpitTargetPosition = new THREE.Vector3(-0.08, 0.76, 0.22)
+```
+
+初始化相机时，让镜头看向座舱附近：
+
+```ts
+camera.position.copy(initialCameraPosition)
+controls.target.copy(cockpitTargetPosition)
+```
+
+然后放开控制器限制：
+
+```ts
+controls.enablePan = true
+controls.screenSpacePanning = true
+controls.minDistance = 0.18
+controls.minPolarAngle = 0.05
+controls.maxPolarAngle = Math.PI - 0.05
+```
+
+这里几个参数的作用是：
+
+1. `enablePan`：允许按住鼠标右键或触控板平移视线；
+2. `minDistance`：允许滚轮把相机推得更近，进入座舱内部；
+3. `minPolarAngle` 和 `maxPolarAngle`：放开上下旋转范围，进入内饰后可以 360 度查看；
+4. `camera.near`：调小到 `0.03`，避免镜头靠近车窗或进入车内时把内饰裁掉。
 
 ## SSAO 环境遮蔽
 
