@@ -1265,8 +1265,9 @@ onBeforeUnmount(disposeScene)
   right: 28px;
   bottom: 28px;
   z-index: 2;
-  width: min(360px, calc(100vw - 32px));
-  padding: 18px;
+  box-sizing: border-box;
+  width: min(288px, calc(100vw - 32px));
+  padding: 14px;
   border: 1px solid rgb(255 255 255 / 14%);
   border-radius: 8px;
   background: rgb(8 11 16 / 78%);
@@ -1275,7 +1276,7 @@ onBeforeUnmount(disposeScene)
 }
 
 .control-group+.control-group {
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .control-group h2 {
@@ -1289,7 +1290,7 @@ onBeforeUnmount(disposeScene)
 
 .control-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1317,8 +1318,8 @@ onBeforeUnmount(disposeScene)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  padding: 0 10px;
+  gap: 5px;
+  padding: 0 8px;
 }
 
 .control-button span {
@@ -1375,7 +1376,7 @@ onBeforeUnmount(disposeScene)
 }
 
 .rim-button {
-  padding: 0 10px;
+  padding: 0 8px;
 }
 
 @media (max-width: 820px) {
