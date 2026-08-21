@@ -22,7 +22,7 @@
           <dd>Interactive</dd>
         </div>
         <div>
-          <dt>Render</dt>
+          <dt>Engine</dt>
           <dd>Three.js</dd>
         </div>
       </dl>
@@ -74,16 +74,6 @@
           <button
             type="button"
             class="control-button"
-            :class="{ 'control-button--active': featureState.spoiler }"
-            :disabled="!partSummary.spoiler"
-            @click="toggleSpoiler"
-          >
-            尾翼
-            <span>{{ partSummary.spoiler }}</span>
-          </button>
-          <button
-            type="button"
-            class="control-button"
             :class="{ 'control-button--active': featureState.wheels }"
             :disabled="!partSummary.wheels"
             @click="toggleWheels"
@@ -105,20 +95,6 @@
       </div>
 
       <div class="control-group">
-        <h2>Render</h2>
-        <div class="control-grid control-grid--single">
-          <button
-            type="button"
-            class="control-button"
-            :class="{ 'control-button--active': featureState.ssao }"
-            @click="toggleSsao"
-          >
-            SSAO
-          </button>
-        </div>
-      </div>
-
-      <div class="control-group">
         <h2>Paint</h2>
         <div class="swatch-row">
           <button
@@ -134,41 +110,6 @@
           ></button>
         </div>
       </div>
-
-      <div class="control-group">
-        <h2>Roof</h2>
-        <div class="swatch-row">
-          <button
-            v-for="roof in roofOptions"
-            :key="roof.name"
-            type="button"
-            class="paint-swatch"
-            :class="{ 'paint-swatch--active': activeRoof === roof.name }"
-            :disabled="!partSummary.roof"
-            :style="{ backgroundColor: roof.color }"
-            :aria-label="roof.label"
-            :aria-pressed="activeRoof === roof.name"
-            @click="applyRoofColor(roof)"
-          ></button>
-        </div>
-      </div>
-
-      <div class="control-group">
-        <h2>Wheels</h2>
-        <div class="rim-list">
-          <button
-            v-for="rim in rimOptions"
-            :key="rim.name"
-            type="button"
-            class="rim-button"
-            :class="{ 'rim-button--active': activeRim === rim.name }"
-            :disabled="!partSummary.rims"
-            @click="applyRimStyle(rim)"
-          >
-            {{ rim.label }}
-          </button>
-        </div>
-      </div>
     </aside>
   </main>
 </template>
@@ -180,10 +121,6 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
 
 interface PaintOption {
@@ -201,31 +138,20 @@ interface CarPaintOption extends PaintOption {
   pearl: number
 }
 
-interface RimOption extends PaintOption {
-  metalness: number
-  roughness: number
-}
-
 interface PartSummary {
   doors: number
   hood: number
   trunk: number
-  spoiler: number
   wheels: number
   lights: number
-  roof: number
-  rims: number
 }
 
 interface InteractiveParts {
   doors: THREE.Object3D[]
   hood: THREE.Object3D[]
   trunk: THREE.Object3D[]
-  spoiler: THREE.Object3D[]
   wheels: THREE.Object3D[]
   lightMeshes: THREE.Mesh[]
-  roofMeshes: THREE.Mesh[]
-  rimMeshes: THREE.Mesh[]
 }
 
 interface TransformSnapshot {
@@ -239,8 +165,6 @@ const corvetteModelUrl = new URL('./models/chevrolet-corvette-c8.glb', import.me
 
 const sceneHostRef = ref<HTMLDivElement | null>(null)
 const activePaint = ref('corvette-red')
-const activeRoof = ref('carbon-roof')
-const activeRim = ref('graphite')
 const modelNote = ref('')
 const modelKicker = 'Animated Sports Car Configurator'
 
@@ -254,60 +178,36 @@ const paintOptions: CarPaintOption[] = [
   { name: 'night-black', label: 'Night Black', color: '#05070a', metalness: 0.14, roughness: 0.18, clearcoatRoughness: 0.026, reflectivity: 0.74, envMapIntensity: 1.58, pearl: 0.02 },
 ]
 
-const roofOptions: PaintOption[] = [
-  { name: 'carbon-roof', label: 'Carbon Roof', color: '#07090c' },
-  { name: 'red-roof', label: 'Red Roof', color: '#8f1418' },
-  { name: 'silver-roof', label: 'Silver Roof', color: '#aeb8c2' },
-]
-
-const rimOptions: RimOption[] = [
-  { name: 'graphite', label: '石墨', color: '#20252d', metalness: 0.74, roughness: 0.28 },
-  { name: 'silver', label: '银色', color: '#c7ced6', metalness: 0.78, roughness: 0.2 },
-  { name: 'bronze', label: '青铜', color: '#8f6a43', metalness: 0.7, roughness: 0.24 },
-]
-
 const featureState = reactive({
   doors: false,
   hood: false,
   trunk: false,
-  spoiler: false,
   wheels: false,
   lights: false,
-  ssao: true,
 })
 
 const partSummary = reactive<PartSummary>({
   doors: 0,
   hood: 0,
   trunk: 0,
-  spoiler: 0,
   wheels: 0,
   lights: 0,
-  roof: 0,
-  rims: 0,
 })
 
 const parts: InteractiveParts = {
   doors: [],
   hood: [],
   trunk: [],
-  spoiler: [],
   wheels: [],
   lightMeshes: [],
-  roofMeshes: [],
-  rimMeshes: [],
 }
 
 let scene: THREE.Scene | null = null
 let camera: THREE.PerspectiveCamera | null = null
 let renderer: THREE.WebGLRenderer | null = null
 let controls: OrbitControls | null = null
-let composer: EffectComposer | null = null
-let ssaoPass: SSAOPass | null = null
 let carGroup: THREE.Group | null = null
 let bodyMaterial: THREE.MeshPhysicalMaterial | null = null
-let roofMaterial: THREE.MeshPhysicalMaterial | null = null
-let rimMaterial: THREE.MeshPhysicalMaterial | null = null
 let environmentMap: THREE.WebGLRenderTarget | null = null
 let animationMixer: THREE.AnimationMixer | null = null
 let animationFrameId = 0
@@ -410,30 +310,6 @@ const createBodyMaterial = (sourceMaterial: THREE.Material) => {
   return material
 }
 
-const createRoofMaterial = (sourceMaterial: THREE.Material) => {
-  const currentRoof = roofOptions.find(roof => roof.name === activeRoof.value) || roofOptions[0]!
-  const material = clonePhysicalMaterial(sourceMaterial, currentRoof, {
-    metalness: 0.38,
-    roughness: 0.36,
-    clearcoat: 0.9,
-    envMapIntensity: 1.1,
-  })
-  material.name = 'c8-interactive-roof'
-  return material
-}
-
-const createRimMaterial = (sourceMaterial: THREE.Material) => {
-  const currentRim = rimOptions.find(rim => rim.name === activeRim.value) || rimOptions[0]!
-  const material = clonePhysicalMaterial(sourceMaterial, currentRim, {
-    metalness: currentRim.metalness,
-    roughness: currentRim.roughness,
-    clearcoat: 0.5,
-    envMapIntensity: 1.45,
-  })
-  material.name = 'c8-interactive-rim'
-  return material
-}
-
 const createLightMaterial = (sourceMaterial: THREE.Material, text: string) => {
   const material =
     sourceMaterial instanceof THREE.MeshStandardMaterial
@@ -456,18 +332,9 @@ const createLightMaterial = (sourceMaterial: THREE.Material, text: string) => {
 
 const isBodyMesh = (text: string) => {
   const keywords = ['paint', 'body', 'carpaint', 'car paint', 'exterior', 'corvette', 'c8']
-  const ignored = ['glass', 'window', 'tire', 'tyre', 'rubber', 'rim', 'wheel', 'light', 'lamp', 'roof']
+  const ignored = ['glass', 'window', 'tire', 'tyre', 'rubber', 'rim', 'wheel', 'light', 'lamp']
 
   return includesAny(text, keywords) && !includesAny(text, ignored)
-}
-
-const isRoofMesh = (text: string) => includesAny(text, ['roof', 'top'])
-
-const isRimMesh = (text: string) => {
-  const hasRimName = includesAny(text, ['rim', 'alloy', 'wheel'])
-  const isRubber = includesAny(text, ['tire', 'tyre', 'rubber'])
-
-  return hasRimName && !isRubber
 }
 
 const isMainLightMesh = (text: string) => {
@@ -487,7 +354,6 @@ const clearPartCollections = () => {
   parts.doors.length = 0
   parts.hood.length = 0
   parts.trunk.length = 0
-  parts.spoiler.length = 0
   parts.wheels.length = 0
 }
 
@@ -558,7 +424,6 @@ const collectInteractiveParts = (model: THREE.Object3D) => {
   }
 
   parts.trunk.push(...collectTopLevelObjects(model, ['trunk', 'boot'], ['badge', 'logo']))
-  parts.spoiler.push(...collectTopLevelObjects(model, ['spoiler', 'wing', 'aero']))
   parts.wheels.push(...collectTopLevelObjects(model, ['wheel', 'tire', 'tyre'], ['steering']))
 }
 
@@ -566,11 +431,8 @@ const syncPartSummary = () => {
   partSummary.doors = animatedActions.doors.length || parts.doors.length
   partSummary.hood = animatedActions.hood.length || parts.hood.length
   partSummary.trunk = animatedActions.trunk.length || parts.trunk.length
-  partSummary.spoiler = parts.spoiler.length
   partSummary.wheels = parts.wheels.length
   partSummary.lights = parts.lightMeshes.length
-  partSummary.roof = parts.roofMeshes.length
-  partSummary.rims = parts.rimMeshes.length
 }
 
 const getTrackTargetName = (trackName: string) => {
@@ -687,22 +549,6 @@ const prepareCarModel = (model: THREE.Object3D) => {
       return
     }
 
-    // 特殊材质按优先级处理：灯光、轮毂、车顶、车身。
-    // 这样可以避免一个叫 wheel_paint 的节点被错误当成普通车身。
-    if (isRimMesh(text)) {
-      rimMaterial = rimMaterial || createRimMaterial(sourceMaterial)
-      object.material = rimMaterial
-      parts.rimMeshes.push(object)
-      return
-    }
-
-    if (isRoofMesh(text)) {
-      roofMaterial = roofMaterial || createRoofMaterial(sourceMaterial)
-      object.material = roofMaterial
-      parts.roofMeshes.push(object)
-      return
-    }
-
     if (isBodyMesh(text)) {
       bodyMaterial = bodyMaterial || createBodyMaterial(sourceMaterial)
       object.material = bodyMaterial
@@ -758,8 +604,6 @@ const loadCarModel = async () => {
 const createStage = () => {
   // GridHelper 只是一组线条，不是实心地板。
   // 保留它可以让用户感知空间方向，同时不会像地板一样盖住或压暗车底。
-  // 进阶版开启了 EffectComposer 和 SSAO，后处理会让线条观感比基础版更暗。
-  // 这里把网格颜色单独提亮一点，让最终画面接近基础版的网格亮度。
   const grid = new THREE.GridHelper(18, 36, '#64748b', '#334155')
 
   // 稍微抬高一点，避免和模型底部同在 y=0 时出现闪烁。
@@ -780,25 +624,6 @@ const createStudioLights = () => {
   sideSoftbox.lookAt(0, 0.86, 0)
 
   scene?.add(frontSoftbox, sideSoftbox)
-}
-
-const createComposer = () => {
-  if (!renderer || !scene || !camera) {
-    return
-  }
-
-  const { width, height } = getHostSize()
-
-  composer = new EffectComposer(renderer)
-  composer.addPass(new RenderPass(scene, camera))
-
-  ssaoPass = new SSAOPass(scene, camera, width, height, 32)
-  ssaoPass.kernelRadius = 13
-  ssaoPass.minDistance = 0.004
-  ssaoPass.maxDistance = 0.14
-  ssaoPass.enabled = featureState.ssao
-  composer.addPass(ssaoPass)
-  composer.addPass(new OutputPass())
 }
 
 const initScene = () => {
@@ -849,20 +674,19 @@ const initScene = () => {
 
   const keyLight = new THREE.DirectionalLight('#ffffff', 1.45)
   const fillLight = new THREE.DirectionalLight('#f8fafc', 0.28)
-  const rimLight = new THREE.PointLight('#ffffff', 14, 12)
+  const edgeLight = new THREE.PointLight('#ffffff', 14, 12)
   const ambientLight = new THREE.HemisphereLight('#f8fafc', '#020617', 0.5)
 
   keyLight.position.set(4.4, 7.2, 5.2)
   keyLight.castShadow = true
   keyLight.shadow.mapSize.set(2048, 2048)
   fillLight.position.set(-5, 4.2, -5.2)
-  rimLight.position.set(-3.7, 1.8, -3)
+  edgeLight.position.set(-3.7, 1.8, -3)
 
-  scene.add(keyLight, fillLight, rimLight, ambientLight)
+  scene.add(keyLight, fillLight, edgeLight, ambientLight)
 
   createStudioLights()
   createStage()
-  createComposer()
   void loadCarModel()
 }
 
@@ -991,11 +815,6 @@ const toggleTrunk = () => {
   parts.trunk.forEach(part => animatePart(part, featureState.trunk, { x: 0.72 }))
 }
 
-const toggleSpoiler = () => {
-  featureState.spoiler = !featureState.spoiler
-  parts.spoiler.forEach(part => animatePart(part, featureState.spoiler, { x: -0.16 }, { y: 0.32, z: -0.08 }))
-}
-
 const toggleWheels = () => {
   featureState.wheels = !featureState.wheels
 }
@@ -1014,38 +833,12 @@ const toggleLights = () => {
   updateLights()
 }
 
-const toggleSsao = () => {
-  featureState.ssao = !featureState.ssao
-
-  if (ssaoPass) {
-    ssaoPass.enabled = featureState.ssao
-  }
-}
-
 const applyPaint = (paint: CarPaintOption) => {
   activePaint.value = paint.name
 
   if (bodyMaterial) {
     applyCarPaintToMaterial(bodyMaterial, paint)
   }
-}
-
-const applyRoofColor = (roof: PaintOption) => {
-  activeRoof.value = roof.name
-  roofMaterial?.color.set(roof.color)
-}
-
-const applyRimStyle = (rim: RimOption) => {
-  activeRim.value = rim.name
-
-  if (!rimMaterial) {
-    return
-  }
-
-  rimMaterial.color.set(rim.color)
-  rimMaterial.metalness = rim.metalness
-  rimMaterial.roughness = rim.roughness
-  rimMaterial.needsUpdate = true
 }
 
 const spinWheels = () => {
@@ -1056,7 +849,7 @@ const spinWheels = () => {
   }
 
   parts.wheels.forEach(wheel => {
-    wheel.rotation.x += 0.12
+    wheel.rotation.x += 0.04
   })
 }
 
@@ -1068,12 +861,7 @@ const renderScene = () => {
   animationMixer?.update(animationClock.getDelta())
   spinWheels()
   controls?.update()
-
-  if (composer) {
-    composer.render()
-  } else {
-    renderer.render(scene, camera)
-  }
+  renderer.render(scene, camera)
 
   animationFrameId = window.requestAnimationFrame(renderScene)
 }
@@ -1088,8 +876,6 @@ const handleResize = () => {
   camera.aspect = width / height
   camera.updateProjectionMatrix()
   renderer.setSize(width, height)
-  composer?.setSize(width, height)
-  ssaoPass?.setSize(width, height)
 }
 
 const disposeMaterial = (material: THREE.Material | THREE.Material[], disposedMaterials: Set<THREE.Material>) => {
@@ -1134,8 +920,6 @@ const disposeScene = () => {
 
   clearAnimationActions()
   controls?.dispose()
-  ssaoPass?.dispose()
-  composer?.dispose()
 
   if (scene) {
     disposeObject(scene)
@@ -1150,12 +934,8 @@ const disposeScene = () => {
   camera = null
   renderer = null
   controls = null
-  composer = null
-  ssaoPass = null
   carGroup = null
   bodyMaterial = null
-  roofMaterial = null
-  rimMaterial = null
   environmentMap = null
   transformSnapshots.clear()
   customMaterials.clear()
@@ -1284,13 +1064,13 @@ onBeforeUnmount(disposeScene)
   gap: 8px;
 }
 
-.control-grid--single {
-  grid-template-columns: 1fr;
-}
-
-.control-button,
-.rim-button {
+.control-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
   min-height: 38px;
+  padding: 0 8px;
   border: 1px solid rgb(255 255 255 / 14%);
   border-radius: 7px;
   background: rgb(255 255 255 / 7%);
@@ -1304,23 +1084,13 @@ onBeforeUnmount(disposeScene)
     transform 0.2s ease;
 }
 
-.control-button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 5px;
-  padding: 0 8px;
-}
-
 .control-button span {
   color: #94a3b8;
   font-size: 12px;
 }
 
 .control-button:hover,
-.rim-button:hover,
-.control-button--active,
-.rim-button--active {
+.control-button--active {
   border-color: rgb(248 250 252 / 58%);
   background: rgb(248 250 252 / 16%);
   color: #fff;
@@ -1328,7 +1098,6 @@ onBeforeUnmount(disposeScene)
 }
 
 .control-button:disabled,
-.rim-button:disabled,
 .paint-swatch:disabled {
   cursor: not-allowed;
   opacity: 0.42;
@@ -1357,16 +1126,6 @@ onBeforeUnmount(disposeScene)
   border-color: #fff;
   box-shadow: 0 0 0 4px rgb(255 255 255 / 14%);
   transform: translateY(-2px);
-}
-
-.rim-list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.rim-button {
-  padding: 0 8px;
 }
 
 @media (max-width: 820px) {

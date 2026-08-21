@@ -16,7 +16,7 @@ src/views/animation/car-showcase/interactive.vue
 
 [Animated Chevrolet C8 Model - Sketchfab](https://sketchfab.com/3d-models/animated-chevrolet-c8-model-91d39ff24d6c4e7b83674411f9c5bb67)
 
-这个模型本身带有动画片段，页面描述里也提到可以动画控制车门、机盖、尾翼和车轮。相比普通静态车模，它更适合作为 Three.js 交互展示案例。
+这个模型本身带有动画片段，页面描述里也提到可以动画控制车门、机盖和车轮。相比普通静态车模，它更适合作为 Three.js 交互展示案例。
 
 实际放到项目里的运行时文件是：
 
@@ -24,7 +24,7 @@ src/views/animation/car-showcase/interactive.vue
 src/views/animation/car-showcase/models/chevrolet-corvette-c8.glb
 ```
 
-我解析后看到它包含 `238` 个节点、`72` 个 Mesh、`51` 个材质、`7` 个动画片段。它能明确识别到 `Left Door_122`、`Right Door_104`、`Frunk_69`、`Trunk [or Hood]_140`、`Roof_36`、车轮组和灯光材质。
+我解析后看到它包含 `238` 个节点、`72` 个 Mesh、`51` 个材质、`7` 个动画片段。当前代码最终只保留能稳定生效的车门、前备箱、后备箱、车轮、灯光和车漆切换。
 
 不过它的动画片段名字比较泛，比如 `Object_239Action`，不能单纯靠动画名字判断“这是左门还是右门”。所以交互版会读取动画目标节点，再沿着父级节点往上找，根据 `Left Door`、`Frunk`、`Trunk` 这些祖先名字完成归类。
 
@@ -35,17 +35,13 @@ src/views/animation/car-showcase/models/chevrolet-corvette-c8.glb
 1. 开车门；
 2. 打开前备箱；
 3. 打开后备箱；
-4. 打开尾翼；
-5. 转动车轮；
-6. 灯光控制；
-7. SSAO 环境遮蔽；
-8. 鼠标自由进入内饰视角；
-9. 车顶颜色；
-10. 轮毂样式。
+4. 转动车轮；
+5. 灯光控制；
+6. 鼠标自由进入内饰视角。
 
 这里有一个重点：这些功能不是全部依赖模型本身，也不是所有 GLB 都能完整支持。
 
-像 SSAO 属于渲染能力；车漆、车顶、轮毂属于材质能力；车门、机盖、尾翼、车轮才真正依赖模型节点是否拆分合理。
+像车漆属于材质能力；车门、机盖、车轮才真正依赖模型节点是否拆分合理。
 
 进入内饰视角本质上是相机控制能力。它不要求模型提供动画片段，但要求模型内部确实有座舱、方向盘、座椅、中控这些细节。C8 这份模型包含 `Interior`、`Steering Wheel`、车窗等节点，所以可以通过鼠标滚轮推进到座舱内部，再拖拽旋转查看内饰。
 
@@ -57,7 +53,7 @@ src/views/animation/car-showcase/models/chevrolet-corvette-c8.glb
 2. 红色色卡排在第一个；
 3. 删除外面的白色光圈；
 4. 不创建实心地板，只保留网格参考线；
-5. 背景色和雾化参数与基础版保持一致，网格颜色略微提亮，用来抵消 SSAO 后处理带来的压暗；
+5. 背景色、雾化参数和基础版保持一致；
 6. 初始镜头更靠近汽车；
 7. 整体灯光和曝光更克制，避免红色车漆高光过曝。
 
@@ -78,7 +74,7 @@ const paintOptions: CarPaintOption[] = [
 ]
 ```
 
-展台只保留网格。因为交互版默认开启了 `SSAO`，同一组网格颜色经过后处理后会比基础版更暗，所以这里把网格颜色稍微提亮：
+展台只保留网格：
 
 ```ts
 const grid = new THREE.GridHelper(18, 36, '#64748b', '#334155')
@@ -98,9 +94,8 @@ scene?.add(grid)
 
 1. 车门是独立节点；
 2. 机盖是独立节点；
-3. 尾翼是独立节点；
-4. 车轮是独立节点；
-5. 每个可开合部件的 pivot 在正确位置。
+3. 车轮是独立节点；
+4. 每个可开合部件的 pivot 在正确位置。
 
 所谓 pivot，可以理解成物体旋转的轴心。
 
@@ -114,13 +109,12 @@ scene?.add(grid)
 parts.doors.push(...collectTopLevelObjects(model, ['door'], ['sill']))
 parts.hood.push(...collectTopLevelObjects(model, ['frunk'], ['badge', 'logo']))
 parts.trunk.push(...collectTopLevelObjects(model, ['trunk', 'boot'], ['badge', 'logo']))
-parts.spoiler.push(...collectTopLevelObjects(model, ['spoiler', 'wing', 'aero']))
 parts.wheels.push(...collectTopLevelObjects(model, ['wheel', 'tire', 'tyre'], ['steering']))
 ```
 
 这样写的好处是：不同模型的节点名可能不完全一致。
 
-有的模型叫 `hood`，有的叫 `bonnet`；有的叫 `trunk`，有的叫 `boot`；有的尾翼叫 `spoiler`，有的叫 `wing`。
+有的模型叫 `hood`，有的叫 `bonnet`；有的叫 `trunk`，有的叫 `boot`。
 
 用关键词收集，可以让代码具备一点兼容性。
 
@@ -147,7 +141,7 @@ if (hasMatchedAncestor(object, root, keywords)) {
 }
 ```
 
-意思是：如果父级已经命中了 `door/hood/spoiler` 这些关键词，就只收父级，不再收子级。
+意思是：如果父级已经命中了 `door/hood/trunk` 这些关键词，就只收父级，不再收子级。
 
 这样动画时只需要操作一个完整部件。
 
@@ -299,24 +293,6 @@ parts.trunk.forEach(part => {
 
 C8 的前备箱对应 `Frunk`，后部对应 `Trunk [or Hood]`。如果这两个部件能找到自带动画，就直接播放动画；否则才退回到上面的 GSAP 旋转逻辑。
 
-## 打开尾翼
-
-尾翼通常不是简单旋转，还可能有一点升起：
-
-```ts
-parts.spoiler.forEach(part => {
-  animatePart(part, featureState.spoiler, { x: -0.16 }, { y: 0.32, z: -0.08 })
-})
-```
-
-这里同时控制了：
-
-1. `rotation.x`：尾翼轻微改变角度；
-2. `position.y`：尾翼向上升起；
-3. `position.z`：尾翼略微后移。
-
-这类动画不一定完全真实，但能模拟“主动尾翼展开”的感觉。
-
 ## 车轮旋转
 
 车轮旋转放在渲染循环里：
@@ -328,7 +304,7 @@ const spinWheels = () => {
   }
 
   parts.wheels.forEach(wheel => {
-    wheel.rotation.x += 0.12
+    wheel.rotation.x += 0.04
   })
 }
 ```
@@ -422,56 +398,6 @@ controls.maxPolarAngle = Math.PI - 0.05
 3. `minPolarAngle` 和 `maxPolarAngle`：放开上下旋转范围，进入内饰后可以 360 度查看；
 4. `camera.near`：调小到 `0.03`，避免镜头靠近车窗或进入车内时把内饰裁掉。
 
-## SSAO 环境遮蔽
-
-SSAO 是屏幕空间环境遮蔽。
-
-简单理解：它会让物体接触处、缝隙处、轮胎靠近地面的地方变暗一点。
-
-交互版使用 Three.js 自带的 `SSAOPass`：
-
-```ts
-composer = new EffectComposer(renderer)
-composer.addPass(new RenderPass(scene, camera))
-
-ssaoPass = new SSAOPass(scene, camera, width, height, 32)
-ssaoPass.kernelRadius = 13
-ssaoPass.minDistance = 0.004
-ssaoPass.maxDistance = 0.14
-composer.addPass(ssaoPass)
-composer.addPass(new OutputPass())
-```
-
-开启 SSAO 后，车轮、车身缝隙、底部接近网格的位置会更有暗部层次，画面不容易飘。
-
-但它也会增加渲染成本，移动端需要谨慎。
-
-## 车顶颜色
-
-车顶颜色依赖模型是否有独立的 roof/top 节点或材质：
-
-```ts
-const isRoofMesh = (text: string) => includesAny(text, ['roof', 'top'])
-```
-
-如果模型没有把车顶拆出来，这个功能就不能独立生效。
-
-这也是为什么交互版按钮上会显示识别数量。数量为 0，就说明当前模型里没有找到对应部件。
-
-## 轮毂样式
-
-当前代码里的轮毂样式是材质样式，不是几何形状替换：
-
-```ts
-rimMaterial.color.set(rim.color)
-rimMaterial.metalness = rim.metalness
-rimMaterial.roughness = rim.roughness
-```
-
-也就是说，它能切换石墨、银色、青铜这类轮毂质感。
-
-如果要真正切换不同造型的轮毂，就需要模型里提供多个轮毂 Mesh，或者额外加载多个轮毂模型，再根据用户选择显示/隐藏。
-
 ## 交互版的真实难点
 
 这类交互案例最难的不是 Three.js API，而是模型结构。
@@ -492,10 +418,8 @@ model.traverse(object => {
 
 1. 车门节点叫什么；
 2. 机盖节点叫什么；
-3. 尾翼节点叫什么；
-4. 车轮节点叫什么；
-5. 灯光材质叫什么；
-6. 车顶和轮毂是否单独拆分。
+3. 车轮节点叫什么；
+4. 灯光材质叫什么。
 
 当前代码已经做了关键词兜底，后续如果要更稳定，建议根据真实节点名把匹配条件改成精确配置。
 
